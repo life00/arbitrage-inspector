@@ -6,7 +6,7 @@ The program receives an array of exchanges and cryptocurrencies. Then it retriev
 
 ## 2. Arbitrage identification
 
-The program receives all cryptocurrency conversion information and an input cryptocurrency with a given balance. Using a clever algorithm based on graph theory the program identifies possible arbitrage opportunities while accounting for conversion, withdrawal, and other fees. It returns the top 5 arbitrage opportunities if such exist.
+The program receives all cryptocurrency conversion information and an input cryptocurrency with a given balance. Using a clever algorithm based on graph theory (e.g. Bellman-Ford algorithm) the program identifies possible arbitrage opportunities while accounting for conversion, withdrawal, and other fees. It returns the top 5 arbitrage opportunities if such exist.
 
 ### Alternative algorithms
 
