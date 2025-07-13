@@ -10,7 +10,7 @@ The program receives all cryptocurrency conversion information and an input cryp
 
 ### Alternative algorithms
 
-Alternatively, it is possible to use other algorithms. The naive approach would be to iterate through all possible combinations of conversions to identify the best conversion paths, however this is extremely inefficient. Other comprehensive option involves using linear optimization (aka linear programming) methods to construct a function with given constrains and identify the objective. Additionally, other advanced machine learning algorithms can be utilized.
+Alternatively, it is possible to use other algorithms. The naive approach would be to iterate through all possible combinations of conversions to identify the best conversion paths, however this is extremely inefficient. Other comprehensive option involves using linear programming (aka function optimization) methods to construct a function with given constrains and identify the objective. Additionally, other advanced machine learning algorithms can be utilized.
 
 The graph theory method presents the most classic and straightforward solution to the problem, furthermore, new research papers may be used to further improve the algorithm. Therefore, it is selected as the ideal arbitrage identification algorithm.
 
@@ -20,7 +20,7 @@ The program receives the most profitable arbitrage path. Using the necessary API
 
 ## 4. Application interface
 
-The program is accessible through CLI application, GUI application, website, messenger bot, or other medium. It provides a simple control interface and reports top 5 identified arbitrage opportunities and results from the trades.
+The program may be accessible through CLI application, GUI application, website, messenger bot, or other medium. It provides a simple control interface and reports top 5 identified arbitrage opportunities and results from the trades.
 
 ## Technical note
 
