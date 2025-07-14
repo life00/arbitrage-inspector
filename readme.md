@@ -25,3 +25,28 @@ The program may be accessible through CLI application, GUI application, website,
 ## Technical note
 
 Whenever possible, all processes must be executed in parallel to maximize the speed of processing and reduce the price slippage risk.
+
+## Project structure
+
+```
+arbitrage-inspector
+├── cmd
+│   └── arbitrage-inspector
+│       └── main.go
+├── go.mod
+├── internal
+│   ├── arbitrage
+│   │   └── arbitrage.go
+│   ├── data
+│   │   └── data.go
+│   ├── exchange
+│   │   └── exchange.go
+│   ├── fees
+│   │   └── fees.go
+│   ├── models
+│   │   └── models.go
+│   └── trade
+│       └── trade.go
+├── readme.md
+└── todo.md
+```
