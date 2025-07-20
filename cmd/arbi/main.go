@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	// "github.com/life00/arbitrage-inspector/internal/models"
 )
 
 // main.go must be minimal with high abstraction
@@ -15,7 +16,9 @@ func main() {
 	slog.SetDefault(logger)
 	slog.Info("Successfully initialized logger")
 
-	// parse cli arguments
+	// TODO: Parse cli arguments and define imputs
+
+	// TODO: Define data structures
 
 	// TODO: 1. Data retrieval using data.go and fees.go
 

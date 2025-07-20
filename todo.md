@@ -1,10 +1,13 @@
-- [ ] filesystem and Go project layout
+- [x] filesystem and Go project layout
   - it should have minimal but robust layout
   - it must satisfy the common Go project standards
-- [ ] Arbitrage identification and algorithm prototype
-  - manually test what is possible on those various crypto exchanges
-  - figure out what is an appropriate data input format
-  - identify all possible conversion and withdrawal fees and account for them
-- [ ] Complete data retrieval
-  - select the most unpopular exchanges with an API (for data retrieval and trading)
-  - select the most unpopular but widely converted cryptocurrencies
+- [ ] Preparation
+  - [ ] study the arbitrage algorithm (with fees) and find possible libraries
+  - [ ] research functionality of ccxt library
+  - [ ] identify necessary data and define data structures
+  - [ ] find and test (create API keys) available exchanges which support data retrieval and trade execution
+  - [ ] identify all possible conversion and withdrawal fees
+  - [ ] identify common least traded cryptocurrencies in those exchanges
+  - [ ] proceed with further development
+- [ ] Core development
+  - ...
