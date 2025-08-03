@@ -20,9 +20,15 @@ func main() {
 
 	// TODO: Define data structures
 
-	// TODO: 1. Data retrieval using data.go and fees.go
+	// 1. Data retrieval using data.go
+	// 1.1. Using exchange.go with CCXT
+	// 1.2. Using fees.go
 
-	// TODO: 2. Arbitrage identification using arbitrage.go
+	// 2. Arbitrage identification using arbitrage.go
+	// 2.1. Graph creation (with fees)
+	// 2.2. Bellman-Ford algorithm negative cycle detection
+	// 2.3. Arbitrage path retrieval
 
-	// TODO: 3. Trade execution using trade.go
+	// 3. Trade execution using trade.go
+	// 3.1. While the arbitrage is still present continue the trading cycle (check using data.go)
 }
