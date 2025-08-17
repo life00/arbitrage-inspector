@@ -22,7 +22,8 @@ For example, if there is data for ticker "ETH/BTC", then for the conversion from
 
 There are two main kinds of fees involved:
 
-1. **deposit/withdraw fee**: usually a flat fee dependent on a specific cryptocurrency blockchain gas fee
+1. **deposit/withdraw fee**: usually a flat fee dependent on a selected cryptocurrency network
+   - the program selects the cheapest network which is commonly available across all exchanges
 2. **conversion fee**: usually a percentage fee for the entire exchange, but there may be difference across _markets_
    - two kinds of fees:
      - market-taker, which are usually higher
