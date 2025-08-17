@@ -2,8 +2,20 @@ package models
 
 // common data type definition
 
-// models for:
+type Exchanges struct {
+	Exchanges []Exchange
+}
+
+type Exchange struct {
+	Name string
+}
+
+type Currencies struct {
+	Currencies []Currency
+}
+
+type Currency struct {
+	Code string
+}
+
 // exchange rate data
-// fee data
-// list of exchanges
-// list of cryptocurrencies

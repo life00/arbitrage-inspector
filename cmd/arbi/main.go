@@ -3,7 +3,9 @@ package main
 import (
 	"log/slog"
 	"os"
-	// "github.com/life00/arbitrage-inspector/internal/models"
+
+	"github.com/life00/arbitrage-inspector/internal/data"
+	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 // main.go must be minimal with high abstraction
@@ -16,13 +18,31 @@ func main() {
 	slog.SetDefault(logger)
 	slog.Info("Successfully initialized logger")
 
-	// TODO: Parse cli arguments and define imputs
+	// TODO: Parse cli arguments and define inputs
+	exchanges := models.Exchanges{
+		Exchanges: []models.Exchange{
+			{Name: "binance"},
+			{Name: "kucoin"},
+		},
+	}
+
+	currencies := models.Currencies{
+		Currencies: []models.Currency{
+			{Code: "BTC"},
+			{Code: "ETH"},
+			{Code: "USDT"},
+		},
+	}
 
 	// TODO: Define data structures
 
-	// 1. Data retrieval using data.go
+	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Using exchange.go with CCXT
-	// 1.2. Using fees.go
+	slog.Info("Fetching data")
+	err := data.FetchData(exchanges, currencies)
+	if err != nil {
+		panic(err)
+	}
 
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Graph creation (with fees)
