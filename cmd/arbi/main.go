@@ -14,9 +14,12 @@ import (
 
 func main() {
 	// setup a default logger
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}))
 	slog.SetDefault(logger)
-	slog.Info("Successfully initialized logger")
+	slog.Info("successfully started logger")
 
 	// TODO: Parse cli arguments and define inputs
 	exchanges := models.Exchanges{
@@ -37,8 +40,7 @@ func main() {
 	// TODO: Define data structures
 
 	// 1. Data retrieval using data.go, exchange.go
-	// 1.1. Using exchange.go with CCXT
-	slog.Info("Fetching data...")
+	slog.Info("fetching data...")
 	err := data.FetchData(exchanges, currencies)
 	if err != nil {
 		panic(err)

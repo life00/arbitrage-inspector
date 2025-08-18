@@ -2,7 +2,10 @@ module github.com/life00/arbitrage-inspector
 
 go 1.24.4
 
-require github.com/ccxt/ccxt/go/v4 v4.5.0
+require (
+	github.com/ccxt/ccxt/go/v4 v4.5.0
+	github.com/joho/godotenv v1.5.1
+)
 
 require (
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect

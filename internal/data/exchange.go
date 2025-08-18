@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/ccxt/ccxt/go/v4"
+	"github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
@@ -43,6 +44,12 @@ type exchangeResult struct {
 
 // concurrently loads all exchanges with API credentials and fetches currency data into cache
 func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
+	// get the environment variables
+	err := godotenv.Load()
+	if err != nil {
+		slog.Error("failed to load .env file")
+	}
+
 	var wg sync.WaitGroup
 	resultsChan := make(chan exchangeResult, len(exchanges.Exchanges))
 
@@ -53,7 +60,7 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 			defer wg.Done()
 			result := exchangeResult{}
 
-			slog.Info(fmt.Sprintf("Instantiating CCXT exchange %s...", ex.Name))
+			slog.Debug(fmt.Sprintf("loading exchange %s...", ex.Name))
 
 			// handle credentials from .env
 			options := map[string]interface{}{}
@@ -82,11 +89,8 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 			result.exchange = ccxtExchange
 
 			// fetch currencies to cache data and test connection
-			slog.Info(fmt.Sprintf("Fetching currencies for %s...", ex.Name))
 			if _, err := ccxtExchange.FetchCurrencies(); err != nil {
 				result.err = fmt.Errorf("failed to fetch currencies for %s: %w", ex.Name, err)
-			} else {
-				slog.Info(fmt.Sprintf("Successfully fetched currencies for %s", ex.Name))
 			}
 
 			resultsChan <- result
