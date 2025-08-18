@@ -3,15 +3,30 @@ package data
 import (
 	"fmt"
 
+	"github.com/ccxt/ccxt/go/v4"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func FetchData(exchanges models.Exchanges, currencies models.Currencies) error {
+func validateInput(exchanges models.Exchanges, currencies models.Currencies) ([]ccxt.IExchange, error) {
 	err := validateExchanges(exchanges)
+	if err != nil {
+		return nil, err
+	}
+	ccxtExchanges, err := loadCcxt(exchanges)
+	if err != nil {
+		return nil, err
+	}
+	// fetchCommonCurrencies()
+	// validateCurrencies()
+	fmt.Println(ccxtExchanges)
+	return nil, nil
+}
+
+func FetchData(exchanges models.Exchanges, currencies models.Currencies) error {
+	ccxtExchanges, err := validateInput(exchanges, currencies)
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(exchanges, currencies)
+	fmt.Println(ccxtExchanges)
 	return nil
 }

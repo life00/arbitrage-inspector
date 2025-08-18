@@ -32,3 +32,7 @@ func validateExchanges(exchanges models.Exchanges) error {
 
 	return nil
 }
+
+func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
+	return []ccxt.IExchange{}, nil
+}
