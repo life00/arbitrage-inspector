@@ -18,7 +18,7 @@ func validateInput(exchanges models.Exchanges, currencies models.Currencies) ([]
 	}
 	// fetchCommonCurrencies()
 	// validateCurrencies()
-	fmt.Println(ccxtExchanges)
+	fmt.Println(ccxtExchanges[0].GetId())
 	return nil, nil
 }
 

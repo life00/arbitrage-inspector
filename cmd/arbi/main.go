@@ -21,7 +21,7 @@ func main() {
 	// TODO: Parse cli arguments and define inputs
 	exchanges := models.Exchanges{
 		Exchanges: []models.Exchange{
-			{Name: "binance"},
+			// {Name: "binance"},
 			{Name: "kucoin"},
 		},
 	}
@@ -38,7 +38,7 @@ func main() {
 
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Using exchange.go with CCXT
-	slog.Info("Fetching data")
+	slog.Info("Fetching data...")
 	err := data.FetchData(exchanges, currencies)
 	if err != nil {
 		panic(err)
