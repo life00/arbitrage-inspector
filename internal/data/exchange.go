@@ -1,21 +1,34 @@
 package data
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/ccxt/ccxt/go/v4"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func validateExchanges(exchanges models.Exchanges) error {
-	if false {
-		err := errors.New("something went wrong")
+	invalidExchanges := []string{}
+	for _, exchange := range exchanges.Exchanges {
+		found := false
+		for _, ccxtExchange := range ccxt.Exchanges {
+			if strings.EqualFold(exchange.Name, ccxtExchange) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			invalidExchanges = append(invalidExchanges, exchange.Name)
+		}
+	}
 
-		slog.Error("something went wrong")
+	if len(invalidExchanges) > 0 {
+		err := fmt.Errorf("invalid exchanges: %s", strings.Join(invalidExchanges, ", "))
+		slog.Error(err.Error())
 		return err
 	}
-	fmt.Println(ccxt.Exchanges)
+
 	return nil
 }
