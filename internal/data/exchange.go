@@ -12,20 +12,31 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func validateExchanges(exchanges models.Exchanges) error {
-	invalidExchanges := []string{}
-	for _, exchange := range exchanges.Exchanges {
-		found := false
-		for _, ccxtExchange := range ccxt.Exchanges {
-			if strings.EqualFold(exchange.Name, ccxtExchange) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			invalidExchanges = append(invalidExchanges, exchange.Name)
+func containsAll(itemsToCheck []string, sourceList []string) []string {
+	// Create a map for efficient lookups.
+	sourceMap := make(map[string]struct{}, len(sourceList))
+	for _, item := range sourceList {
+		sourceMap[strings.ToLower(item)] = struct{}{}
+	}
+
+	var notFound []string
+	for _, item := range itemsToCheck {
+		if _, found := sourceMap[strings.ToLower(item)]; !found {
+			notFound = append(notFound, item)
 		}
 	}
+	return notFound
+}
+
+func validateExchanges(exchanges models.Exchanges) error {
+	// extract the names from the Exchanges object
+	exchangeNames := make([]string, len(exchanges.Exchanges))
+	for i, exchange := range exchanges.Exchanges {
+		exchangeNames[i] = exchange.Name
+	}
+
+	// uses a reusable function
+	invalidExchanges := containsAll(exchangeNames, ccxt.Exchanges)
 
 	if len(invalidExchanges) > 0 {
 		err := fmt.Errorf("invalid exchanges: %s", strings.Join(invalidExchanges, ", "))
