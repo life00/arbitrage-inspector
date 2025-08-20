@@ -10,5 +10,6 @@
   - [x] identify common least traded cryptocurrencies in those exchanges
   - [x] proceed with further development
 - [ ] Core development
-  - [ ] create tests
+  - [ ] create more tests
+  - [ ] evaluate the quality/performance of existing functions
   - [ ] continue working on validateInput() in data.go
