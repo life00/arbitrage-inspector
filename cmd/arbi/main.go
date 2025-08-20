@@ -24,7 +24,7 @@ func main() {
 	// TODO: Parse cli arguments and define inputs
 	exchanges := models.Exchanges{
 		Exchanges: []models.Exchange{
-			// {Name: "binance"},
+			{Name: "binance"},
 			{Name: "kucoin"},
 		},
 	}

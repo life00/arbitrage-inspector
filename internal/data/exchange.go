@@ -88,9 +88,9 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 			}
 			result.exchange = ccxtExchange
 
-			// fetch currencies to cache data and test connection
-			if _, err := ccxtExchange.FetchCurrencies(); err != nil {
-				result.err = fmt.Errorf("failed to fetch currencies for %s: %w", ex.Name, err)
+			// load markets to cache data and test connection
+			if _, err := ccxtExchange.LoadMarkets(); err != nil {
+				result.err = fmt.Errorf("failed to load markets for %s: %w", ex.Name, err)
 			}
 
 			resultsChan <- result
@@ -121,4 +121,45 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 	}
 
 	return loadedExchanges, nil
+}
+
+func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
+	ccxtExchanges := *ccxtExchangesPtr
+
+	if len(ccxtExchanges) == 0 {
+		return models.Currencies{}
+	}
+
+	firstExchangeCurrencies := make(map[string]bool)
+	for _, currency := range ccxtExchanges[0].GetCurrenciesList() {
+		if currency.Id != nil {
+			firstExchangeCurrencies[*currency.Id] = true
+		}
+	}
+
+	commonCurrencies := firstExchangeCurrencies
+
+	for i := 1; i < len(ccxtExchanges); i++ {
+		currentExchangeCurrencies := make(map[string]bool)
+		for _, currency := range ccxtExchanges[i].GetCurrenciesList() {
+			if currency.Id != nil {
+				currentExchangeCurrencies[*currency.Id] = true
+			}
+		}
+
+		// find the intersection
+		for currency := range commonCurrencies {
+			if !currentExchangeCurrencies[currency] {
+				delete(commonCurrencies, currency)
+			}
+		}
+	}
+
+	// convert the result into models.Currencies
+	result := make([]models.Currency, 0, len(commonCurrencies))
+	for currency := range commonCurrencies {
+		result = append(result, models.Currency{Code: currency})
+	}
+
+	return models.Currencies{Currencies: result}
 }
