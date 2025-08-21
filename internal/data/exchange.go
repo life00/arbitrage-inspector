@@ -162,7 +162,7 @@ func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 	// convert the result into models.Currencies
 	result := make([]models.Currency, 0, len(commonCurrencies))
 	for currency := range commonCurrencies {
-		result = append(result, models.Currency{Code: currency})
+		result = append(result, models.Currency{Id: currency})
 	}
 
 	return models.Currencies{Currencies: result}
@@ -172,12 +172,12 @@ func validateCurrencies(currencies models.Currencies, commonCurrencies models.Cu
 	// extract currency ID into slices of strings
 	var currencyIds []string
 	for _, c := range currencies.Currencies {
-		currencyIds = append(currencyIds, c.Code)
+		currencyIds = append(currencyIds, c.Id)
 	}
 
 	var commonCurrencyIds []string
 	for _, c := range commonCurrencies.Currencies {
-		commonCurrencyIds = append(commonCurrencyIds, c.Code)
+		commonCurrencyIds = append(commonCurrencyIds, c.Id)
 	}
 
 	missingCurrencies := findMissingItems(currencyIds, commonCurrencyIds)

@@ -38,9 +38,9 @@ func main() {
 
 	currencies := models.Currencies{
 		Currencies: []models.Currency{
-			{Code: "BTC"},
-			{Code: "ETH"},
-			{Code: "USDC"},
+			{Id: "BTC"},
+			{Id: "ETH"},
+			{Id: "USDC"},
 		},
 	}
 

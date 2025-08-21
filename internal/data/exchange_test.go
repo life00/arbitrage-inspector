@@ -154,7 +154,7 @@ func TestGetCommonCurrencies(t *testing.T) {
 					currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")},
 				},
 			},
-			want: models.Currencies{Currencies: []models.Currency{{Code: "BTC"}, {Code: "ETH"}}},
+			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}, {Id: "ETH"}}},
 		},
 		{
 			name: "two exchanges with common currencies",
@@ -168,7 +168,7 @@ func TestGetCommonCurrencies(t *testing.T) {
 					currencies: []ccxt.Currency{newCurrency("ETH"), newCurrency("LTC"), newCurrency("BTC")},
 				},
 			},
-			want: models.Currencies{Currencies: []models.Currency{{Code: "BTC"}, {Code: "ETH"}}},
+			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}, {Id: "ETH"}}},
 		},
 		{
 			name: "multiple exchanges with one common currency",
@@ -177,7 +177,7 @@ func TestGetCommonCurrencies(t *testing.T) {
 				&mockExchange{name: "B", currencies: []ccxt.Currency{newCurrency("LTC"), newCurrency("BTC")}},
 				&mockExchange{name: "C", currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("XRP")}},
 			},
-			want: models.Currencies{Currencies: []models.Currency{{Code: "BTC"}}},
+			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}}},
 		},
 		{
 			name: "exchanges with no common currencies",
@@ -193,7 +193,7 @@ func TestGetCommonCurrencies(t *testing.T) {
 				&mockExchange{name: "A", currencies: []ccxt.Currency{newCurrency("BTC"), {Id: nil}, newCurrency("ETH")}},
 				&mockExchange{name: "B", currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("LTC")}},
 			},
-			want: models.Currencies{Currencies: []models.Currency{{Code: "BTC"}}},
+			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}}},
 		},
 	}
 
@@ -203,10 +203,10 @@ func TestGetCommonCurrencies(t *testing.T) {
 
 			// Sort both slices for consistent comparison, as map iteration order is not guaranteed.
 			sort.Slice(got.Currencies, func(i, j int) bool {
-				return got.Currencies[i].Code < got.Currencies[j].Code
+				return got.Currencies[i].Id < got.Currencies[j].Id
 			})
 			sort.Slice(tt.want.Currencies, func(i, j int) bool {
-				return tt.want.Currencies[i].Code < tt.want.Currencies[j].Code
+				return tt.want.Currencies[i].Id < tt.want.Currencies[j].Id
 			})
 
 			if !reflect.DeepEqual(got, tt.want) {

@@ -15,7 +15,7 @@ type Currencies struct {
 }
 
 type Currency struct {
-	Code string
+	Id string
 }
 
 // exchange rate data
