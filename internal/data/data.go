@@ -22,10 +22,13 @@ func validateInput(exchanges models.Exchanges, currencies models.Currencies) ([]
 	slog.Debug("identifying common currencies...")
 	commonCurrencies := getCommonCurrencies(&ccxtExchanges)
 
-	// slog.Debug("validating currencies...")
-	// validateCurrencies()
-	fmt.Println(commonCurrencies)
-	return nil, nil
+	slog.Debug("validating currencies...")
+	err = validateCurrencies(currencies, commonCurrencies)
+	if err != nil {
+		return nil, err
+	}
+
+	return ccxtExchanges, nil
 }
 
 func FetchData(exchanges models.Exchanges, currencies models.Currencies) error {

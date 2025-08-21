@@ -40,7 +40,7 @@ func main() {
 		Currencies: []models.Currency{
 			{Code: "BTC"},
 			{Code: "ETH"},
-			{Code: "USDT"},
+			{Code: "USDC"},
 		},
 	}
 

@@ -12,7 +12,7 @@ import (
 )
 
 func findMissingItems(itemsToCheck []string, sourceList []string) []string {
-	// Create a map for efficient lookups.
+	// create a map for efficient lookups
 	sourceMap := make(map[string]struct{}, len(sourceList))
 	for _, item := range sourceList {
 		sourceMap[strings.ToLower(item)] = struct{}{}
@@ -166,4 +166,28 @@ func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 	}
 
 	return models.Currencies{Currencies: result}
+}
+
+func validateCurrencies(currencies models.Currencies, commonCurrencies models.Currencies) error {
+	// extract currency ID into slices of strings
+	var currencyIds []string
+	for _, c := range currencies.Currencies {
+		currencyIds = append(currencyIds, c.Code)
+	}
+
+	var commonCurrencyIds []string
+	for _, c := range commonCurrencies.Currencies {
+		commonCurrencyIds = append(commonCurrencyIds, c.Code)
+	}
+
+	missingCurrencies := findMissingItems(currencyIds, commonCurrencyIds)
+
+	if len(missingCurrencies) > 0 {
+		err := fmt.Errorf("invalid currencies: %s", strings.Join(missingCurrencies, ", "))
+		slog.Error(err.Error())
+		return err
+	}
+
+	// no missing currencies
+	return nil
 }
