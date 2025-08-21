@@ -8,11 +8,10 @@ import (
 	"sync"
 
 	"github.com/ccxt/ccxt/go/v4"
-	"github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func containsAll(itemsToCheck []string, sourceList []string) []string {
+func findMissingItems(itemsToCheck []string, sourceList []string) []string {
 	// Create a map for efficient lookups.
 	sourceMap := make(map[string]struct{}, len(sourceList))
 	for _, item := range sourceList {
@@ -36,7 +35,7 @@ func validateExchanges(exchanges models.Exchanges) error {
 	}
 
 	// uses a reusable function
-	invalidExchanges := containsAll(exchangeNames, ccxt.Exchanges)
+	invalidExchanges := findMissingItems(exchangeNames, ccxt.Exchanges)
 
 	if len(invalidExchanges) > 0 {
 		err := fmt.Errorf("invalid exchanges: %s", strings.Join(invalidExchanges, ", "))
@@ -55,12 +54,6 @@ type exchangeResult struct {
 
 // concurrently loads all exchanges with API credentials and fetches currency data into cache
 func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
-	// get the environment variables
-	err := godotenv.Load()
-	if err != nil {
-		slog.Error("failed to load .env file")
-	}
-
 	var wg sync.WaitGroup
 	resultsChan := make(chan exchangeResult, len(exchanges.Exchanges))
 

@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/data"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
@@ -20,6 +21,12 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 	slog.Info("successfully started logger")
+
+	// get the environment variables (API credentials)
+	err := godotenv.Load()
+	if err != nil {
+		slog.Error("failed to load .env file")
+	}
 
 	// TODO: Parse cli arguments and define inputs
 	exchanges := models.Exchanges{
@@ -41,7 +48,7 @@ func main() {
 
 	// 1. Data retrieval using data.go, exchange.go
 	slog.Info("fetching data...")
-	err := data.FetchData(exchanges, currencies)
+	err = data.FetchData(exchanges, currencies)
 	if err != nil {
 		panic(err)
 	}
