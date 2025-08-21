@@ -215,3 +215,100 @@ func TestGetCommonCurrencies(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCurrencies(t *testing.T) {
+	tests := []struct {
+		name             string
+		currencies       models.Currencies
+		commonCurrencies models.Currencies
+		wantErr          bool
+	}{
+		{
+			name: "All cryptocurrencies supported",
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+					{Id: "ETH"},
+				},
+			},
+			commonCurrencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+					{Id: "ETH"},
+					{Id: "ADA"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Some cryptocurrencies are not supported",
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+					{Id: "XRP"},
+				},
+			},
+			commonCurrencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+					{Id: "ETH"},
+					{Id: "ADA"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Multiple cryptocurrencies are not supported",
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "XRP"},
+					{Id: "DOGE"},
+				},
+			},
+			commonCurrencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+					{Id: "ETH"},
+					{Id: "ADA"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Input cryptocurrencies list is empty",
+			currencies: models.Currencies{
+				Currencies: []models.Currency{},
+			},
+			commonCurrencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+					{Id: "ETH"},
+					{Id: "ADA"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Supported cryptocurrencies list is empty",
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "BTC"},
+				},
+			},
+			commonCurrencies: models.Currencies{
+				Currencies: []models.Currency{},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateCurrencies(tt.currencies, tt.commonCurrencies)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateCurrencies() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
