@@ -130,9 +130,18 @@ func (m *mockExchange) GetCurrenciesList() []ccxt.Currency {
 	return m.currencies
 }
 
-// newCurrency is a test helper to create a ccxt.Currency with a non-nil ID pointer.
+// newCurrency is a test helper to create a ccxt.Currency
+// with a non-nil ID pointer and all boolean fields set to true.
 func newCurrency(id string) ccxt.Currency {
-	return ccxt.Currency{Id: &id}
+	active := true
+	deposit := true
+	withdraw := true
+	return ccxt.Currency{
+		Id:       &id,
+		Active:   &active,
+		Deposit:  &deposit,
+		Withdraw: &withdraw,
+	}
 }
 
 func TestGetCommonCurrencies(t *testing.T) {
@@ -199,7 +208,7 @@ func TestGetCommonCurrencies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCommonCurrencies(&tt.exchanges)
+			got := getCommonActiveCurrencies(&tt.exchanges)
 
 			// Sort both slices for consistent comparison, as map iteration order is not guaranteed.
 			sort.Slice(got.Currencies, func(i, j int) bool {

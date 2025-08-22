@@ -146,7 +146,7 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 	return loadedExchanges, nil
 }
 
-func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
+func getCommonActiveCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 	if ccxtExchangesPtr == nil {
 		return models.Currencies{}
 	}
@@ -212,8 +212,6 @@ func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 }
 
 func validateCurrencies(currencies models.Currencies, commonCurrencies models.Currencies) error {
-	// TODO: only extract those currencies which are active and support withdrawals and deposits
-
 	// extract currency ID into slices of strings
 	var currencyIds []string
 	for _, c := range currencies.Currencies {
