@@ -159,6 +159,17 @@ func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 
 	firstExchangeCurrencies := make(map[string]bool)
 	for _, currency := range ccxtExchanges[0].GetCurrenciesList() {
+		// it also checks if the currency is active or not
+		// it doesn't accept any inactive currencies or those that do not accept deposits/withdrawals
+		if currency.Active == nil || !*currency.Active {
+			continue
+		}
+		if currency.Deposit == nil || !*currency.Deposit {
+			continue
+		}
+		if currency.Withdraw == nil || !*currency.Withdraw {
+			continue
+		}
 		if currency.Id != nil {
 			firstExchangeCurrencies[*currency.Id] = true
 		}
@@ -169,6 +180,15 @@ func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 	for i := 1; i < len(ccxtExchanges); i++ {
 		currentExchangeCurrencies := make(map[string]bool)
 		for _, currency := range ccxtExchanges[i].GetCurrenciesList() {
+			if currency.Active == nil || !*currency.Active {
+				continue
+			}
+			if currency.Deposit == nil || !*currency.Deposit {
+				continue
+			}
+			if currency.Withdraw == nil || !*currency.Withdraw {
+				continue
+			}
 			if currency.Id != nil {
 				currentExchangeCurrencies[*currency.Id] = true
 			}
