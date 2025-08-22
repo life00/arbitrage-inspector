@@ -18,4 +18,14 @@ type Currency struct {
 	Id string
 }
 
+type CurrencyPairs struct {
+	CurrencyPairs []CurrencyPair
+}
+
+type CurrencyPair struct {
+	Id    string
+	Base  string
+	Quote string
+}
+
 // exchange rate data

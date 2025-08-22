@@ -12,4 +12,5 @@
 - [ ] Core development
   - [ ] create more tests
   - [ ] evaluate the quality/performance of existing functions
-  - [ ] continue working on validateInput() in data.go
+  - [x] continue working on validateInput() in data.go
+  - [ ] finish getCurrencyPairs()

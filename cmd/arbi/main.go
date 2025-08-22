@@ -41,6 +41,7 @@ func main() {
 			{Id: "BTC"},
 			{Id: "ETH"},
 			{Id: "USDC"},
+			{Id: "DOGE"},
 		},
 	}
 
