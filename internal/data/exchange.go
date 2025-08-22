@@ -28,14 +28,33 @@ func findMissingItems(itemsToCheck []string, sourceList []string) []string {
 }
 
 func validateExchanges(exchanges models.Exchanges) error {
+	supportedExchanges := []string{}
+
+	for _, exchangeID := range ccxt.Exchanges {
+		exchange := ccxt.CreateExchange(exchangeID, nil)
+
+		// use the GetHas() method to check
+		has := exchange.GetHas()
+		if has["fetchCurrencies"] == true &&
+			has["fetchMarkets"] == true &&
+			has["fetchTickers"] == true &&
+			has["fetchDepositWithdrawFees"] == true &&
+			// has["fetchTradingFees"] == true && // NOTE: I don't think this feature is necessary; this can be found in fetchCurrencies()
+			has["createOrder"] == true &&
+			has["fetchBalance"] == true &&
+			has["withdraw"] == true &&
+			has["fetchDepositAddress"] == true {
+			supportedExchanges = append(supportedExchanges, exchangeID)
+		}
+	}
+
 	// extract the names from the Exchanges object
 	exchangeNames := make([]string, len(exchanges.Exchanges))
 	for i, exchange := range exchanges.Exchanges {
 		exchangeNames[i] = exchange.Name
 	}
-
 	// uses a reusable function
-	invalidExchanges := findMissingItems(exchangeNames, ccxt.Exchanges)
+	invalidExchanges := findMissingItems(exchangeNames, supportedExchanges)
 
 	if len(invalidExchanges) > 0 {
 		err := fmt.Errorf("invalid exchanges: %s", strings.Join(invalidExchanges, ", "))
@@ -128,6 +147,10 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 }
 
 func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
+	if ccxtExchangesPtr == nil {
+		return models.Currencies{}
+	}
+
 	ccxtExchanges := *ccxtExchangesPtr
 
 	if len(ccxtExchanges) == 0 {
@@ -169,6 +192,8 @@ func getCommonCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 }
 
 func validateCurrencies(currencies models.Currencies, commonCurrencies models.Currencies) error {
+	// TODO: only extract those currencies which are active and support withdrawals and deposits
+
 	// extract currency ID into slices of strings
 	var currencyIds []string
 	for _, c := range currencies.Currencies {
