@@ -234,3 +234,16 @@ func validateCurrencies(currencies models.Currencies, commonCurrencies models.Cu
 	// no missing currencies
 	return nil
 }
+
+func getCurrencyPairs(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies) models.CurrencyPairs {
+	if ccxtExchangesPtr == nil {
+		return models.CurrencyPairs{}
+	}
+	// ccxtExchanges := *ccxtExchangesPtr
+
+	// extract a list of markets which are active, linear (I guess?), percentage fee, correct side of fee (?????)
+	// find common markets across all exchanges (create a reusable function)
+	// find all possible currency pairs (available in the found common markets) based on input currencies
+
+	return models.CurrencyPairs{}
+}

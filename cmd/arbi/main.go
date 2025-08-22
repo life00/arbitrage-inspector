@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -48,11 +49,15 @@ func main() {
 	// TODO: Define data structures
 
 	// 1. Data retrieval using data.go, exchange.go
-	slog.Info("fetching data...")
-	err = data.FetchData(exchanges, currencies)
+	// 1.1. Validating and transforming the inputs; initializing the library
+	slog.Info("initializing data fetcher...")
+	ccxtExchanges, currencyPairs, err := data.InitializeDataFetcher(exchanges, currencies)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(ccxtExchanges, currencyPairs)
+	// 1.2. Fetching price data and fees
+	// ...
 
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Graph creation (with fees)
