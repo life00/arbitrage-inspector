@@ -28,6 +28,11 @@ func findMissingItems(itemsToCheck []string, sourceList []string) []string {
 }
 
 func validateExchanges(exchanges models.Exchanges) error {
+	if len(exchanges.Exchanges) == 0 {
+		err := fmt.Errorf("list of exchanges is empty")
+		slog.Error(err.Error())
+		return err
+	}
 	supportedExchanges := []string{}
 
 	for _, exchangeID := range ccxt.Exchanges {
@@ -192,6 +197,12 @@ func getCommonValidCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currenc
 }
 
 func validateCurrencies(currencies models.Currencies, commonCurrencies models.Currencies) error {
+	if len(currencies.Currencies) == 0 {
+		err := fmt.Errorf("list of currencies is empty")
+		slog.Error(err.Error())
+		return err
+	}
+
 	// extract currency ID into slices of strings
 	var currencyIds []string
 	for _, c := range currencies.Currencies {
@@ -217,6 +228,7 @@ func validateCurrencies(currencies models.Currencies, commonCurrencies models.Cu
 
 // NOTE: maybe it might be possible to have a reusable generic function
 // for getCommonValidMarkets() and getCommonValidCurrencies()?
+// also split the common market and valid market identification into two functions?
 func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
 	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
 		return models.Markets{}

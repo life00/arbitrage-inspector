@@ -41,7 +41,6 @@ func getCurrencyPairs(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Curr
 
 	fmt.Println(commonMarkets)
 
-	// find common markets across all exchanges (create a reusable function)
 	// find all possible currency pairs (available in the found common markets) based on input currencies
 
 	return models.Markets{}
