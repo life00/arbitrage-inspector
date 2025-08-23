@@ -151,46 +151,76 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 	return loadedExchanges, nil
 }
 
+// getCommonItems finds the intersection of items present across all exchanges.
+// T is the source item type from the ccxt library (e.g., ccxt.Currency).
+// U is the destination item type for your models (e.g., models.Currency).
+func getCommonItems[T any, U any](
+	ccxtExchanges []ccxt.IExchange,
+	// getList retrieves the list of source items from a single exchange.
+	getList func(e ccxt.IExchange) []T,
+	// processItem validates a source item and transforms it into the destination type.
+	// It should return the item's ID, the transformed item, and a boolean indicating if it's valid.
+	processItem func(item T) (id string, value U, ok bool),
+) map[string]U {
+	if len(ccxtExchanges) == 0 {
+		return nil
+	}
+
+	// 1. Get all valid items from the first exchange to create the initial set.
+	commonItems := make(map[string]U)
+	for _, item := range getList(ccxtExchanges[0]) {
+		if id, value, ok := processItem(item); ok {
+			commonItems[id] = value
+		}
+	}
+
+	// 2. Iterate through the rest of the exchanges to find the intersection.
+	for i := 1; i < len(ccxtExchanges); i++ {
+		currentExchangeItems := make(map[string]bool)
+		for _, item := range getList(ccxtExchanges[i]) {
+			// For subsequent exchanges, we only need the ID to check for presence.
+			if id, _, ok := processItem(item); ok {
+				currentExchangeItems[id] = true
+			}
+		}
+
+		// 3. Keep only the items that are also in the current exchange.
+		for id := range commonItems {
+			if !currentExchangeItems[id] {
+				delete(commonItems, id)
+			}
+		}
+	}
+
+	return commonItems
+}
+
 func getCommonValidCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
 	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
 		return models.Currencies{}
 	}
 
-	ccxtExchanges := *ccxtExchangesPtr
-
-	firstExchangeCurrencies := make(map[string]bool)
-	for _, currency := range ccxtExchanges[0].GetCurrenciesList() {
-		// it also checks if the currency is active or not
-		// it doesn't accept any inactive currencies or those that do not accept deposits/withdrawals
+	// Define the function to process a single currency.
+	processCurrency := func(currency ccxt.Currency) (string, models.Currency, bool) {
+		// Validation logic for a currency.
 		if currency.Active == nil || !*currency.Active || currency.Deposit == nil || !*currency.Deposit || currency.Withdraw == nil || !*currency.Withdraw || currency.Id == nil {
-			continue
+			return "", models.Currency{}, false
 		}
-		firstExchangeCurrencies[*currency.Id] = true
+		id := *currency.Id
+		return id, models.Currency{Id: id}, true
 	}
 
-	commonCurrencies := firstExchangeCurrencies
+	// Call the generic helper.
+	commonCurrenciesMap := getCommonItems(
+		*ccxtExchangesPtr,
+		func(e ccxt.IExchange) []ccxt.Currency { return e.GetCurrenciesList() },
+		processCurrency,
+	)
 
-	for i := 1; i < len(ccxtExchanges); i++ {
-		currentExchangeCurrencies := make(map[string]bool)
-		for _, currency := range ccxtExchanges[i].GetCurrenciesList() {
-			if currency.Active == nil || !*currency.Active || currency.Deposit == nil || !*currency.Deposit || currency.Withdraw == nil || !*currency.Withdraw || currency.Id == nil {
-				continue
-			}
-			currentExchangeCurrencies[*currency.Id] = true
-		}
-
-		// find the intersection
-		for currency := range commonCurrencies {
-			if !currentExchangeCurrencies[currency] {
-				delete(commonCurrencies, currency)
-			}
-		}
-	}
-
-	// convert the result into models.Currencies
-	result := make([]models.Currency, 0, len(commonCurrencies))
-	for currency := range commonCurrencies {
-		result = append(result, models.Currency{Id: currency})
+	// Convert the result map into the final slice.
+	result := make([]models.Currency, 0, len(commonCurrenciesMap))
+	for _, currency := range commonCurrenciesMap {
+		result = append(result, currency)
 	}
 
 	return models.Currencies{Currencies: result}
@@ -226,52 +256,35 @@ func validateCurrencies(currencies models.Currencies, commonCurrencies models.Cu
 	return nil
 }
 
-// NOTE: maybe it might be possible to have a reusable generic function
-// for getCommonValidMarkets() and getCommonValidCurrencies()?
-// also split the common market and valid market identification into two functions?
 func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
 	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
 		return models.Markets{}
 	}
 
-	ccxtExchanges := *ccxtExchangesPtr
-
-	firstExchangeMarkets := make(map[string]models.Market)
-	for _, market := range ccxtExchanges[0].GetMarketsList() {
-		// verify if the market is supported
+	// Define the function to process a single market.
+	processMarket := func(market ccxt.MarketInterface) (string, models.Market, bool) {
+		// Validation logic for a market.
 		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
-			continue
+			return "", models.Market{}, false
 		}
-
-		firstExchangeMarkets[*market.Symbol] = models.Market{
+		model := models.Market{
 			Id:    *market.Symbol,
 			Base:  *market.BaseId,
 			Quote: *market.QuoteId,
 		}
+		return model.Id, model, true
 	}
 
-	commonMarkets := firstExchangeMarkets
+	// Call the generic helper.
+	commonMarketsMap := getCommonItems(
+		*ccxtExchangesPtr,
+		func(e ccxt.IExchange) []ccxt.MarketInterface { return e.GetMarketsList() },
+		processMarket,
+	)
 
-	for i := 1; i < len(ccxtExchanges); i++ {
-		currentExchangeMarkets := make(map[string]bool)
-		for _, market := range ccxtExchanges[i].GetMarketsList() {
-			if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
-				continue
-			}
-			currentExchangeMarkets[*market.Symbol] = true
-		}
-
-		// finds the intersection
-		for marketId := range commonMarkets {
-			if !currentExchangeMarkets[marketId] {
-				delete(commonMarkets, marketId)
-			}
-		}
-	}
-
-	// convert the result into the output
-	result := make([]models.Market, 0, len(commonMarkets))
-	for _, market := range commonMarkets {
+	// Convert the result map into the final slice.
+	result := make([]models.Market, 0, len(commonMarketsMap))
+	for _, market := range commonMarketsMap {
 		result = append(result, market)
 	}
 
