@@ -50,7 +50,7 @@ func TestValidateExchanges(t *testing.T) {
 			exchanges: models.Exchanges{
 				Exchanges: []models.Exchange{},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 
@@ -313,7 +313,7 @@ func TestValidateCurrencies(t *testing.T) {
 					{Id: "ADA"},
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "Supported cryptocurrencies list is empty",
