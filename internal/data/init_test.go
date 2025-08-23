@@ -346,11 +346,11 @@ func (m *mockExchange) GetMarketsList() []ccxt.MarketInterface {
 }
 
 // newMarket is a test helper to create a ccxt.Market with all required fields valid.
-func newMarket(id, baseId, quoteId string) ccxt.MarketInterface {
+func newMarket(symbol, baseId, quoteId string) ccxt.MarketInterface {
 	active := true
 	spot := true
 	return ccxt.MarketInterface{
-		Id:      &id,
+		Symbol:  &symbol,
 		BaseId:  &baseId,
 		QuoteId: &quoteId,
 		Active:  &active,
@@ -375,12 +375,12 @@ func TestGetCommonValidMarkets(t *testing.T) {
 				&mockExchange{
 					name: "exchangeA",
 					markets: []ccxt.MarketInterface{
-						newMarket("BTC-USDC", "BTC", "USDC"),
-						newMarket("ETH-USDC", "ETH", "USDC"),
+						newMarket("BTC/USDC", "BTC", "USDC"),
+						newMarket("ETH/USDC", "ETH", "USDC"),
 					},
 				},
 			},
-			want: models.Markets{Markets: []models.Market{{Id: "BTC-USDC", Base: "BTC", Quote: "USDC"}, {Id: "ETH-USDC", Base: "ETH", Quote: "USDC"}}},
+			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}, {Id: "ETH/USDC", Base: "ETH", Quote: "USDC"}}},
 		},
 		{
 			name: "two exchanges with common markets",
@@ -388,60 +388,60 @@ func TestGetCommonValidMarkets(t *testing.T) {
 				&mockExchange{
 					name: "exchangeA",
 					markets: []ccxt.MarketInterface{
-						newMarket("BTC-USDC", "BTC", "USDC"),
-						newMarket("ETH-USDC", "ETH", "USDC"),
-						newMarket("XRP-USDC", "XRP", "USDC"),
+						newMarket("BTC/USDC", "BTC", "USDC"),
+						newMarket("ETH/USDC", "ETH", "USDC"),
+						newMarket("XRP/USDC", "XRP", "USDC"),
 					},
 				},
 				&mockExchange{
 					name: "exchangeB",
 					markets: []ccxt.MarketInterface{
-						newMarket("ETH-USDC", "ETH", "USDC"),
-						newMarket("LTC-USDC", "LTC", "USDC"),
-						newMarket("BTC-USDC", "BTC", "USDC"),
+						newMarket("ETH/USDC", "ETH", "USDC"),
+						newMarket("LTC/USDC", "LTC", "USDC"),
+						newMarket("BTC/USDC", "BTC", "USDC"),
 					},
 				},
 			},
-			want: models.Markets{Markets: []models.Market{{Id: "BTC-USDC", Base: "BTC", Quote: "USDC"}, {Id: "ETH-USDC", Base: "ETH", Quote: "USDC"}}},
+			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}, {Id: "ETH/USDC", Base: "ETH", Quote: "USDC"}}},
 		},
 		{
 			name: "multiple exchanges with one common market",
 			exchanges: []ccxt.IExchange{
-				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC-USDC", "BTC", "USDC"), newMarket("ETH-USDC", "ETH", "USDC")}},
-				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("LTC-USDC", "LTC", "USDC"), newMarket("BTC-USDC", "BTC", "USDC")}},
-				&mockExchange{name: "C", markets: []ccxt.MarketInterface{newMarket("BTC-USDC", "BTC", "USDC"), newMarket("XRP-USDC", "XRP", "USDC")}},
+				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("ETH/USDC", "ETH", "USDC")}},
+				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("LTC/USDC", "LTC", "USDC"), newMarket("BTC/USDC", "BTC", "USDC")}},
+				&mockExchange{name: "C", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("XRP/USDC", "XRP", "USDC")}},
 			},
-			want: models.Markets{Markets: []models.Market{{Id: "BTC-USDC", Base: "BTC", Quote: "USDC"}}},
+			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}}},
 		},
 		{
 			name: "exchanges with no common markets",
 			exchanges: []ccxt.IExchange{
-				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC-USDC", "BTC", "USDC"), newMarket("ETH-USDC", "ETH", "USDC")}},
-				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("LTC-USDC", "LTC", "USDC"), newMarket("XRP-USDC", "XRP", "USDC")}},
+				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("ETH/USDC", "ETH", "USDC")}},
+				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("LTC/USDC", "LTC", "USDC"), newMarket("XRP/USDC", "XRP", "USDC")}},
 			},
 			want: models.Markets{Markets: []models.Market{}},
 		},
 		{
 			name: "handles markets with nil ID gracefully",
 			exchanges: []ccxt.IExchange{
-				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC-USDC", "BTC", "USDC"), {Id: nil}, newMarket("ETH-USDC", "ETH", "USDC")}},
-				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("BTC-USDC", "BTC", "USDC"), newMarket("LTC-USDC", "LTC", "USDC")}},
+				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), {Symbol: nil}, newMarket("ETH/USDC", "ETH", "USDC")}},
+				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("LTC/USDC", "LTC", "USDC")}},
 			},
-			want: models.Markets{Markets: []models.Market{{Id: "BTC-USDC", Base: "BTC", Quote: "USDC"}}},
+			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}}},
 		},
 		{
 			name: "handles inactive markets",
 			exchanges: []ccxt.IExchange{
 				&mockExchange{name: "A", markets: []ccxt.MarketInterface{
-					newMarket("BTC-USDC", "BTC", "USDC"),
+					newMarket("BTC/USDC", "BTC", "USDC"),
 					func() ccxt.MarketInterface {
-						id, active, spot := "ETH-USDC", false, true
-						return ccxt.MarketInterface{Id: &id, Active: &active, Spot: &spot}
+						symbol, active, spot := "ETH/USDC", false, true
+						return ccxt.MarketInterface{Symbol: &symbol, Active: &active, Spot: &spot}
 					}(),
 				}},
-				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("BTC-USDC", "BTC", "USDC"), newMarket("LTC-USDC", "LTC", "USDC")}},
+				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("LTC/USDC", "LTC", "USDC")}},
 			},
-			want: models.Markets{Markets: []models.Market{{Id: "BTC-USDC", Base: "BTC", Quote: "USDC"}}},
+			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}}},
 		},
 	}
 

@@ -55,7 +55,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(ccxtExchanges, markets)
+	fmt.Println(ccxtExchanges, markets, len(markets.Markets))
 	// 1.2. Fetching price data and fees
 	// ...
 

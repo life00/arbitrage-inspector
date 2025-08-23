@@ -239,12 +239,12 @@ func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
 	firstExchangeMarkets := make(map[string]models.Market)
 	for _, market := range ccxtExchanges[0].GetMarketsList() {
 		// verify if the market is supported
-		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Id == nil || market.BaseId == nil || market.QuoteId == nil {
+		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
 			continue
 		}
 
-		firstExchangeMarkets[*market.Id] = models.Market{
-			Id:    *market.Id,
+		firstExchangeMarkets[*market.Symbol] = models.Market{
+			Id:    *market.Symbol,
 			Base:  *market.BaseId,
 			Quote: *market.QuoteId,
 		}
@@ -255,10 +255,10 @@ func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
 	for i := 1; i < len(ccxtExchanges); i++ {
 		currentExchangeMarkets := make(map[string]bool)
 		for _, market := range ccxtExchanges[i].GetMarketsList() {
-			if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Id == nil || market.BaseId == nil || market.QuoteId == nil {
+			if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
 				continue
 			}
-			currentExchangeMarkets[*market.Id] = true
+			currentExchangeMarkets[*market.Symbol] = true
 		}
 
 		// finds the intersection

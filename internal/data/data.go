@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/ccxt/ccxt/go/v4"
@@ -39,11 +38,9 @@ func getMarkets(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies
 
 	commonMarkets := getCommonValidMarkets(ccxtExchangesPtr)
 
-	fmt.Println(commonMarkets)
-
 	// find all possible currency pairs (available in the found common markets) based on input currencies
 
-	return models.Markets{}
+	return commonMarkets
 }
 
 func InitializeDataFetcher(exchanges models.Exchanges, currencies models.Currencies) ([]ccxt.IExchange, models.Markets, error) {
