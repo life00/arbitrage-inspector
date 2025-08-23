@@ -51,11 +51,11 @@ func main() {
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
 	slog.Info("initializing data fetcher...")
-	ccxtExchanges, currencyPairs, err := data.InitializeDataFetcher(exchanges, currencies)
+	ccxtExchanges, markets, err := data.InitializeDataFetcher(exchanges, currencies)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(ccxtExchanges, currencyPairs)
+	fmt.Println(ccxtExchanges, markets)
 	// 1.2. Fetching price data and fees
 	// ...
 

@@ -31,7 +31,7 @@ func validateInput(exchanges models.Exchanges, currencies models.Currencies) ([]
 	return ccxtExchanges, nil
 }
 
-func getCurrencyPairs(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies) models.Markets {
+func getMarkets(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies) models.Markets {
 	if ccxtExchangesPtr == nil {
 		return models.Markets{}
 	}
@@ -53,8 +53,8 @@ func InitializeDataFetcher(exchanges models.Exchanges, currencies models.Currenc
 		return nil, models.Markets{}, err
 	}
 
-	slog.Info("identifying currency pairs...")
-	currencyPairs := getCurrencyPairs(&ccxtExchanges, currencies)
+	slog.Info("identifying markets...")
+	markets := getMarkets(&ccxtExchanges, currencies)
 
-	return ccxtExchanges, currencyPairs, nil
+	return ccxtExchanges, markets, nil
 }
