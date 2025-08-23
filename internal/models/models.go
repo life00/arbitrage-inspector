@@ -18,11 +18,11 @@ type Currency struct {
 	Id string
 }
 
-type CurrencyPairs struct {
-	CurrencyPairs []CurrencyPair
+type Markets struct {
+	Markets []Market
 }
 
-type CurrencyPair struct {
+type Market struct {
 	Id    string
 	Base  string
 	Quote string

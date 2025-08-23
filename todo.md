@@ -14,3 +14,4 @@
   - [ ] evaluate the quality/performance of existing functions
   - [x] continue working on validateInput() in data.go
   - [ ] finish getCurrencyPairs()
+  - [ ] test what happens if no exchanges or currencies are specified

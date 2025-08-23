@@ -208,7 +208,7 @@ func TestGetCommonCurrencies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCommonActiveCurrencies(&tt.exchanges)
+			got := getCommonValidCurrencies(&tt.exchanges)
 
 			// Sort both slices for consistent comparison, as map iteration order is not guaranteed.
 			sort.Slice(got.Currencies, func(i, j int) bool {

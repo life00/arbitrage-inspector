@@ -146,33 +146,21 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 	return loadedExchanges, nil
 }
 
-func getCommonActiveCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
-	if ccxtExchangesPtr == nil {
+func getCommonValidCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
+	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
 		return models.Currencies{}
 	}
 
 	ccxtExchanges := *ccxtExchangesPtr
 
-	if len(ccxtExchanges) == 0 {
-		return models.Currencies{}
-	}
-
 	firstExchangeCurrencies := make(map[string]bool)
 	for _, currency := range ccxtExchanges[0].GetCurrenciesList() {
 		// it also checks if the currency is active or not
 		// it doesn't accept any inactive currencies or those that do not accept deposits/withdrawals
-		if currency.Active == nil || !*currency.Active {
+		if currency.Active == nil || !*currency.Active || currency.Deposit == nil || !*currency.Deposit || currency.Withdraw == nil || !*currency.Withdraw || currency.Id == nil {
 			continue
 		}
-		if currency.Deposit == nil || !*currency.Deposit {
-			continue
-		}
-		if currency.Withdraw == nil || !*currency.Withdraw {
-			continue
-		}
-		if currency.Id != nil {
-			firstExchangeCurrencies[*currency.Id] = true
-		}
+		firstExchangeCurrencies[*currency.Id] = true
 	}
 
 	commonCurrencies := firstExchangeCurrencies
@@ -180,18 +168,10 @@ func getCommonActiveCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Curren
 	for i := 1; i < len(ccxtExchanges); i++ {
 		currentExchangeCurrencies := make(map[string]bool)
 		for _, currency := range ccxtExchanges[i].GetCurrenciesList() {
-			if currency.Active == nil || !*currency.Active {
+			if currency.Active == nil || !*currency.Active || currency.Deposit == nil || !*currency.Deposit || currency.Withdraw == nil || !*currency.Withdraw || currency.Id == nil {
 				continue
 			}
-			if currency.Deposit == nil || !*currency.Deposit {
-				continue
-			}
-			if currency.Withdraw == nil || !*currency.Withdraw {
-				continue
-			}
-			if currency.Id != nil {
-				currentExchangeCurrencies[*currency.Id] = true
-			}
+			currentExchangeCurrencies[*currency.Id] = true
 		}
 
 		// find the intersection
@@ -235,15 +215,53 @@ func validateCurrencies(currencies models.Currencies, commonCurrencies models.Cu
 	return nil
 }
 
-func getCurrencyPairs(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies) models.CurrencyPairs {
-	if ccxtExchangesPtr == nil {
-		return models.CurrencyPairs{}
+// NOTE: maybe it might be possible to have a reusable generic function
+// for getCommonValidMarkets() and getCommonValidCurrencies()?
+func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
+	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
+		return models.Markets{}
 	}
-	// ccxtExchanges := *ccxtExchangesPtr
 
-	// extract a list of markets which are active, linear (I guess?), percentage fee, correct side of fee (?????)
-	// find common markets across all exchanges (create a reusable function)
-	// find all possible currency pairs (available in the found common markets) based on input currencies
+	ccxtExchanges := *ccxtExchangesPtr
 
-	return models.CurrencyPairs{}
+	firstExchangeMarkets := make(map[string]models.Market)
+	for _, market := range ccxtExchanges[0].GetMarketsList() {
+		// verify if the market is supported
+		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Id == nil || market.BaseId == nil || market.QuoteId == nil {
+			continue
+		}
+
+		firstExchangeMarkets[*market.Id] = models.Market{
+			Id:    *market.Id,
+			Base:  *market.BaseId,
+			Quote: *market.QuoteId,
+		}
+	}
+
+	commonMarkets := firstExchangeMarkets
+
+	for i := 1; i < len(ccxtExchanges); i++ {
+		currentExchangeMarkets := make(map[string]bool)
+		for _, market := range ccxtExchanges[i].GetMarketsList() {
+			if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Id == nil || market.BaseId == nil || market.QuoteId == nil {
+				continue
+			}
+			currentExchangeMarkets[*market.Id] = true
+		}
+
+		// finds the intersection
+		for marketId := range commonMarkets {
+			if !currentExchangeMarkets[marketId] {
+				delete(commonMarkets, marketId)
+			}
+		}
+	}
+
+	// convert the result into the output
+	result := make([]models.Market, 0, len(commonMarkets))
+	for _, market := range commonMarkets {
+		result = append(result, market)
+	}
+
+	return models.Markets{Markets: result}
 }
