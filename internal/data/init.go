@@ -290,3 +290,26 @@ func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
 
 	return models.Markets{Markets: result}
 }
+
+// getMatchingMarkets finds all markets where both the base and quote currencies
+// are present in the provided list of currencies
+func getMatchingMarkets(commonMarkets models.Markets, currencies models.Currencies) models.Markets {
+	// set for quick lookups
+	currencySet := make(map[string]struct{})
+	for _, currency := range currencies.Currencies {
+		currencySet[currency.Id] = struct{}{}
+	}
+
+	var matchingMarkets []models.Market
+
+	for _, market := range commonMarkets.Markets {
+		_, hasBase := currencySet[market.Base]
+		_, hasQuote := currencySet[market.Quote]
+
+		if hasBase && hasQuote {
+			matchingMarkets = append(matchingMarkets, market)
+		}
+	}
+
+	return models.Markets{Markets: matchingMarkets}
+}

@@ -463,3 +463,113 @@ func TestGetCommonValidMarkets(t *testing.T) {
 		})
 	}
 }
+
+func TestGetMatchingMarkets(t *testing.T) {
+	testCases := []struct {
+		name          string
+		commonMarkets models.Markets
+		currencies    models.Currencies
+		want          models.Markets
+	}{
+		{
+			name: "All markets match",
+			commonMarkets: models.Markets{
+				Markets: []models.Market{
+					{Id: "1", Base: "USD", Quote: "EUR"},
+					{Id: "2", Base: "BTC", Quote: "USD"},
+				},
+			},
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "USD"},
+					{Id: "EUR"},
+					{Id: "BTC"},
+				},
+			},
+			want: models.Markets{
+				Markets: []models.Market{
+					{Id: "1", Base: "USD", Quote: "EUR"},
+					{Id: "2", Base: "BTC", Quote: "USD"},
+				},
+			},
+		},
+		{
+			name: "Some markets match",
+			commonMarkets: models.Markets{
+				Markets: []models.Market{
+					{Id: "1", Base: "USD", Quote: "EUR"},
+					{Id: "2", Base: "BTC", Quote: "USD"},
+					{Id: "3", Base: "JPY", Quote: "EUR"}, // Base JPY is not in currencies list
+				},
+			},
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "USD"},
+					{Id: "EUR"},
+					{Id: "BTC"},
+				},
+			},
+			want: models.Markets{
+				Markets: []models.Market{
+					{Id: "1", Base: "USD", Quote: "EUR"},
+					{Id: "2", Base: "BTC", Quote: "USD"},
+				},
+			},
+		},
+		{
+			name: "No markets match",
+			commonMarkets: models.Markets{
+				Markets: []models.Market{
+					{Id: "1", Base: "USD", Quote: "EUR"},
+					{Id: "2", Base: "BTC", Quote: "USD"},
+				},
+			},
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "AUD"},
+					{Id: "CAD"},
+				},
+			},
+			want: models.Markets{
+				Markets: nil,
+			},
+		},
+		{
+			name: "Empty common markets",
+			commonMarkets: models.Markets{
+				Markets: []models.Market{},
+			},
+			currencies: models.Currencies{
+				Currencies: []models.Currency{
+					{Id: "USD"},
+				},
+			},
+			want: models.Markets{
+				Markets: nil,
+			},
+		},
+		{
+			name: "Empty currencies list",
+			commonMarkets: models.Markets{
+				Markets: []models.Market{
+					{Id: "1", Base: "USD", Quote: "EUR"},
+				},
+			},
+			currencies: models.Currencies{
+				Currencies: []models.Currency{},
+			},
+			want: models.Markets{
+				Markets: nil,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := getMatchingMarkets(tc.commonMarkets, tc.currencies)
+			if !reflect.DeepEqual(result, tc.want) {
+				t.Errorf("For test case '%s', got unexpected result.\nExpected: %+v\nGot: %+v", tc.name, tc.want, result)
+			}
+		})
+	}
+}

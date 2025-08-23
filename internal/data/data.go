@@ -31,16 +31,14 @@ func validateInput(exchanges models.Exchanges, currencies models.Currencies) ([]
 }
 
 func getMarkets(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies) models.Markets {
-	if ccxtExchangesPtr == nil {
-		return models.Markets{}
-	}
-	// ccxtExchanges := *ccxtExchangesPtr
-
+	slog.Debug("identifying common markets...")
 	commonMarkets := getCommonValidMarkets(ccxtExchangesPtr)
 
 	// find all possible currency pairs (available in the found common markets) based on input currencies
+	slog.Debug("deriving input markets...")
+	markets := getMatchingMarkets(commonMarkets, currencies)
 
-	return commonMarkets
+	return markets
 }
 
 func InitializeDataFetcher(exchanges models.Exchanges, currencies models.Currencies) ([]ccxt.IExchange, models.Markets, error) {
