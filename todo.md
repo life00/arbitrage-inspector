@@ -1,17 +1,15 @@
-- [x] filesystem and Go project layout
-  - it should have minimal but robust layout
-  - it must satisfy the common Go project standards
-- [x] Preparation
-  - [x] study the arbitrage algorithm (with fees) and find possible libraries
-  - [x] research functionality of ccxt library
-  - [x] identify necessary data and define data structures
-  - [x] find and test (create API keys) available exchanges which support data retrieval and trade execution
-  - [x] identify all possible conversion and withdrawal fees
-  - [x] identify common least traded cryptocurrencies in those exchanges
-  - [x] proceed with further development
-- [ ] Core development
-  - [ ] create more tests
-  - [ ] evaluate the quality/performance of existing functions
-  - [x] continue working on validateInput() in data.go
-  - [ ] finish getCurrencyPairs()
-  - [ ] test what happens if no exchanges or currencies are specified
+- [ ] evaluate the quality/performance of existing functions
+- client
+  - ...
+- data
+  - [ ] check if API credentials are correct
+  - [ ] add support for identifying non-common currencies and markets
+    - instead of solely restricting currencies and markets to only those which are commonly accessible, change the data structure and algorithms to allow for identifying non-common markets
+    - would require reimplementing most of data package and creating a completely different exchanges based data structure for currencies and markets
+  - [ ] create a function to actually fetch conversion price data and fees for specified markets
+  - [ ] create functionality to automatically generate currencies if no currencies are provided
+    - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
+- arbitrage
+  - ...
+- trade
+  - ...
