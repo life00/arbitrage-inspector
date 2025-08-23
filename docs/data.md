@@ -12,6 +12,8 @@ However, if no input is provided, the data management module will randomly gener
 
 Additionally, it will be possible to continuously run the arbitrage algorithm on randomly sampled exchange and currency pairs. This would allow to collect data on most common exchanges/currencies that are present in arbitrage paths to create a ranking system for exchanges/currencies to further enhance the exchange/currency selection system.
 
+In general, it seems that most of the markets (currency pairs) are connected with stablecoins, i.e. conversion between various alt coins is only possible through stablecoins. They include: USDC, USDT, FDUSD, BUSD, TUSD, etc. In addition to that, regular currencies are also commonly connecting markets, including: USD, TRY, EUR, JPY, etc. Otherwise, the remaining connecting currencies are the most popular cryptocurrencies, such as BTC, ETH, and BNB. To achieve the best results in triangular arbitrage it might be better to avoid using any of the stablecoins or regular currencies in the arbitrage network.
+
 ## Price data
 
 The latest price data is retrieved from all the exchanges with bid and ask price for each currency. Both bid and ask price will be used as weights for corresponding side of the transaction.
