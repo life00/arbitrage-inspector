@@ -140,200 +140,94 @@ func newCurrency(id string) ccxt.Currency {
 	}
 }
 
-// func TestGetCommonCurrencies(t *testing.T) {
-// 	tests := []struct {
-// 		name      string
-// 		exchanges []ccxt.IExchange
-// 		want      models.Currencies
-// 	}{
-// 		{
-// 			name:      "no exchanges",
-// 			exchanges: []ccxt.IExchange{},
-// 			want:      models.Currencies{},
-// 		},
-// 		{
-// 			name: "one exchange",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{
-// 					name:       "exchangeA",
-// 					currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")},
-// 				},
-// 			},
-// 			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}, {Id: "ETH"}}},
-// 		},
-// 		{
-// 			name: "two exchanges with common currencies",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{
-// 					name:       "exchangeA",
-// 					currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH"), newCurrency("XRP")},
-// 				},
-// 				&mockExchange{
-// 					name:       "exchangeB",
-// 					currencies: []ccxt.Currency{newCurrency("ETH"), newCurrency("LTC"), newCurrency("BTC")},
-// 				},
-// 			},
-// 			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}, {Id: "ETH"}}},
-// 		},
-// 		{
-// 			name: "multiple exchanges with one common currency",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")}},
-// 				&mockExchange{name: "B", currencies: []ccxt.Currency{newCurrency("LTC"), newCurrency("BTC")}},
-// 				&mockExchange{name: "C", currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("XRP")}},
-// 			},
-// 			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}}},
-// 		},
-// 		{
-// 			name: "exchanges with no common currencies",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")}},
-// 				&mockExchange{name: "B", currencies: []ccxt.Currency{newCurrency("LTC"), newCurrency("XRP")}},
-// 			},
-// 			want: models.Currencies{Currencies: []models.Currency{}}, // Expect empty slice, not nil
-// 		},
-// 		{
-// 			name: "handles currencies with nil ID gracefully",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", currencies: []ccxt.Currency{newCurrency("BTC"), {Id: nil}, newCurrency("ETH")}},
-// 				&mockExchange{name: "B", currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("LTC")}},
-// 			},
-// 			want: models.Currencies{Currencies: []models.Currency{{Id: "BTC"}}},
-// 		},
-// 		{
-// 			name: "two exchanges, common currency inactive",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{
-// 					name:       "A",
-// 					currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")},
-// 				},
-// 				&mockExchange{
-// 					name: "B",
-// 					currencies: []ccxt.Currency{func() ccxt.Currency {
-// 						id, active := "BTC", false
-// 						return ccxt.Currency{Id: &id, Active: &active}
-// 					}(), newCurrency("LTC")},
-// 				},
-// 			},
-// 			want: models.Currencies{Currencies: []models.Currency{}},
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got := getCommonValidCurrencies(&tt.exchanges)
-//
-// 			// Sort both slices for consistent comparison, as map iteration order is not guaranteed.
-// 			sort.Slice(got.Currencies, func(i, j int) bool {
-// 				return got.Currencies[i].Id < got.Currencies[j].Id
-// 			})
-// 			sort.Slice(tt.want.Currencies, func(i, j int) bool {
-// 				return tt.want.Currencies[i].Id < tt.want.Currencies[j].Id
-// 			})
-//
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("getCommonCurrencies() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
+func TestValidateCurrencies(t *testing.T) {
+	exchangeA := &mockExchange{
+		name:       "exchangeA",
+		currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")},
+	}
 
-// func TestValidateCurrencies(t *testing.T) {
-// 	tests := []struct {
-// 		name             string
-// 		currencies       models.Currencies
-// 		commonCurrencies models.Currencies
-// 		wantErr          bool
-// 	}{
-// 		{
-// 			name: "All cryptocurrencies supported",
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 					{Id: "ETH"},
-// 				},
-// 			},
-// 			commonCurrencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 					{Id: "ETH"},
-// 					{Id: "ADA"},
-// 				},
-// 			},
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name: "Some cryptocurrencies are not supported",
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 					{Id: "XRP"},
-// 				},
-// 			},
-// 			commonCurrencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 					{Id: "ETH"},
-// 					{Id: "ADA"},
-// 				},
-// 			},
-// 			wantErr: true,
-// 		},
-// 		{
-// 			name: "Multiple cryptocurrencies are not supported",
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "XRP"},
-// 					{Id: "DOGE"},
-// 				},
-// 			},
-// 			commonCurrencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 					{Id: "ETH"},
-// 					{Id: "ADA"},
-// 				},
-// 			},
-// 			wantErr: true,
-// 		},
-// 		{
-// 			name: "Input cryptocurrencies list is empty",
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{},
-// 			},
-// 			commonCurrencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 					{Id: "ETH"},
-// 					{Id: "ADA"},
-// 				},
-// 			},
-// 			wantErr: true,
-// 		},
-// 		{
-// 			name: "Supported cryptocurrencies list is empty",
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "BTC"},
-// 				},
-// 			},
-// 			commonCurrencies: models.Currencies{
-// 				Currencies: []models.Currency{},
-// 			},
-// 			wantErr: true,
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			err := validateCurrencies(tt.currencies, tt.commonCurrencies)
-//
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("validateCurrencies() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-// 		})
-// 	}
-// }
+	exchangeB := &mockExchange{
+		name:       "exchangeB",
+		currencies: []ccxt.Currency{newCurrency("LTC"), newCurrency("ADA")},
+	}
+
+	activeTrue, inactiveFalse := true, false
+	idDoge, idSol, idDot := "DOGE", "SOL", "DOT"
+
+	exchangeCWithInvalid := &mockExchange{
+		name: "exchangeC",
+		currencies: []ccxt.Currency{
+			newCurrency("XRP"), // This one is valid
+			{Id: &idDoge, Active: &inactiveFalse, Deposit: &activeTrue, Withdraw: &activeTrue}, // Inactive
+			{Id: &idSol, Active: &activeTrue, Deposit: &inactiveFalse, Withdraw: &activeTrue},  // Deposit disabled
+			{Id: &idDot, Active: &activeTrue, Deposit: &activeTrue, Withdraw: &inactiveFalse},  // Withdraw disabled
+			{Id: nil, Active: &activeTrue, Deposit: &activeTrue, Withdraw: &activeTrue},        // Nil ID
+		},
+	}
+
+	tests := []struct {
+		name        string
+		currencies  []string
+		clientsPtr  *[]ccxt.IExchange
+		wantErr     bool
+		errContains string // For checking the error message content
+	}{
+		{
+			name:       "valid currencies across multiple exchanges",
+			currencies: []string{"BTC", "LTC"},
+			clientsPtr: &[]ccxt.IExchange{exchangeA, exchangeB},
+			wantErr:    false,
+		},
+		{
+			name:        "multiple currencies are invalid",
+			currencies:  []string{"BTC", "unsupported1", "unsupported2"},
+			clientsPtr:  &[]ccxt.IExchange{exchangeA},
+			wantErr:     true,
+			errContains: "invalid currencies: unsupported1, unsupported2",
+		},
+		{
+			name:        "empty list of currencies to check",
+			currencies:  []string{},
+			clientsPtr:  &[]ccxt.IExchange{exchangeA},
+			wantErr:     true,
+			errContains: "list of currencies is empty",
+		},
+		{
+			name:        "empty clients list",
+			currencies:  []string{"BTC"},
+			clientsPtr:  &[]ccxt.IExchange{},
+			wantErr:     true,
+			errContains: "list of clients is empty",
+		},
+		{
+			name:        "currency exists but is inactive",
+			currencies:  []string{"DOGE"},
+			clientsPtr:  &[]ccxt.IExchange{exchangeCWithInvalid},
+			wantErr:     true,
+			errContains: "invalid currencies: DOGE",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateCurrencies(tt.currencies, tt.clientsPtr)
+
+			if !tt.wantErr && err != nil {
+				t.Errorf("validateCurrencies() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err == nil {
+				t.Errorf("validateCurrencies() error = nil, wantErr %v", tt.wantErr)
+				return
+			}
+			if tt.wantErr && err != nil {
+				if !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("validateCurrencies() error = %q, want error to contain %q", err.Error(), tt.errContains)
+				}
+			}
+		})
+	}
+}
 
 // // GetMarketsList overrides the embedded interface's method.
 // func (m *mockExchange) GetMarketsList() []ccxt.MarketInterface {

@@ -18,14 +18,12 @@ func validateInput(exchanges []string, currencies []string) ([]ccxt.IExchange, e
 	if err != nil {
 		return nil, err
 	}
-	// slog.Debug("identifying common currencies...")
-	// commonCurrencies := getCommonValidCurrencies(&clients)
 
-	// slog.Debug("validating currencies...")
-	// err = validateCurrencies(currencies, commonCurrencies)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	slog.Debug("validating currencies...")
+	err = validateCurrencies(currencies, &clients)
+	if err != nil {
+		return nil, err
+	}
 
 	return clients, nil
 }
