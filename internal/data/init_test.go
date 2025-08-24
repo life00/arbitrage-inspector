@@ -10,7 +10,7 @@ import (
 
 	"github.com/ccxt/ccxt/go/v4"
 	"github.com/joho/godotenv"
-	// "github.com/life00/arbitrage-inspector/internal/models"
+	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func TestMain(m *testing.M) {
@@ -92,7 +92,7 @@ func TestLoadCcxt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			loadedExchanges, err := loadCcxt(tt.exchanges)
+			loadedExchanges, err := loadClient(tt.exchanges)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadCcxt() error = %v, wantErr %v", err, tt.wantErr)
@@ -168,41 +168,41 @@ func TestValidateCurrencies(t *testing.T) {
 	tests := []struct {
 		name        string
 		currencies  []string
-		clientsPtr  *[]ccxt.IExchange
+		clientsPtr  *models.Clients
 		wantErr     bool
 		errContains string // For checking the error message content
 	}{
 		{
 			name:       "valid currencies across multiple exchanges",
 			currencies: []string{"BTC", "LTC"},
-			clientsPtr: &[]ccxt.IExchange{exchangeA, exchangeB},
+			clientsPtr: &models.Clients{exchangeA.name: exchangeA, exchangeB.name: exchangeB},
 			wantErr:    false,
 		},
 		{
 			name:        "multiple currencies are invalid",
 			currencies:  []string{"BTC", "unsupported1", "unsupported2"},
-			clientsPtr:  &[]ccxt.IExchange{exchangeA},
+			clientsPtr:  &models.Clients{exchangeA.name: exchangeA},
 			wantErr:     true,
 			errContains: "invalid currencies: unsupported1, unsupported2",
 		},
 		{
 			name:        "empty list of currencies to check",
 			currencies:  []string{},
-			clientsPtr:  &[]ccxt.IExchange{exchangeA},
+			clientsPtr:  &models.Clients{exchangeA.name: exchangeA},
 			wantErr:     true,
 			errContains: "list of currencies is empty",
 		},
 		{
 			name:        "empty clients list",
 			currencies:  []string{"BTC"},
-			clientsPtr:  &[]ccxt.IExchange{},
+			clientsPtr:  &models.Clients{},
 			wantErr:     true,
 			errContains: "list of clients is empty",
 		},
 		{
 			name:        "currency exists but is inactive",
 			currencies:  []string{"DOGE"},
-			clientsPtr:  &[]ccxt.IExchange{exchangeCWithInvalid},
+			clientsPtr:  &models.Clients{exchangeCWithInvalid.name: exchangeCWithInvalid},
 			wantErr:     true,
 			errContains: "invalid currencies: DOGE",
 		},

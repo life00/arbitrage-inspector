@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/ccxt/ccxt/go/v4"
-	// "github.com/life00/arbitrage-inspector/internal/models"
+	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func findMissingItems(itemsToCheck []string, sourceList []string) []string {
@@ -72,7 +72,7 @@ type clientResult struct {
 }
 
 // concurrently loads all exchanges with API credentials and fetches currency data into cache
-func loadCcxt(exchanges []string) ([]ccxt.IExchange, error) {
+func loadClient(exchanges []string) (models.Clients, error) {
 	var wg sync.WaitGroup
 	resultsChan := make(chan clientResult, len(exchanges))
 
@@ -131,13 +131,13 @@ func loadCcxt(exchanges []string) ([]ccxt.IExchange, error) {
 	close(resultsChan)
 
 	// extract results
-	var loadedClients []ccxt.IExchange
+	loadedClients := make(models.Clients)
 	var allErrors []error
 	for res := range resultsChan {
 		if res.err != nil {
 			allErrors = append(allErrors, res.err)
 		} else {
-			loadedClients = append(loadedClients, res.client)
+			loadedClients[res.client.GetId()] = res.client
 		}
 	}
 
@@ -153,7 +153,7 @@ func loadCcxt(exchanges []string) ([]ccxt.IExchange, error) {
 	return loadedClients, nil
 }
 
-func validateCurrencies(currencies []string, clientsPtr *[]ccxt.IExchange) error {
+func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 	if len(currencies) == 0 {
 		err := fmt.Errorf("list of currencies is empty")
 		slog.Error(err.Error())

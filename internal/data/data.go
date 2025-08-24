@@ -3,18 +3,17 @@ package data
 import (
 	"log/slog"
 
-	"github.com/ccxt/ccxt/go/v4"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func validateInput(exchanges []string, currencies []string) ([]ccxt.IExchange, error) {
+func validateInput(exchanges []string, currencies []string) (models.Clients, error) {
 	slog.Debug("validating exchanges...")
 	err := validateExchanges(exchanges)
 	if err != nil {
 		return nil, err
 	}
 	slog.Debug("initializing ccxt...")
-	clients, err := loadCcxt(exchanges)
+	clients, err := loadClient(exchanges)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +38,7 @@ func validateInput(exchanges []string, currencies []string) ([]ccxt.IExchange, e
 // 	return markets
 // }
 
-func InitializeData(exchanges []string, currencies []string) (models.Exchanges, []ccxt.IExchange, error) {
+func InitializeData(exchanges []string, currencies []string) (models.Exchanges, models.Clients, error) {
 	slog.Info("validating inputs...")
 	clients, err := validateInput(exchanges, currencies)
 	if err != nil {
