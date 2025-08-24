@@ -1,31 +1,31 @@
 package models
 
-// common data type definition
+import (
+	"time"
 
-type Exchanges struct {
-	Exchanges []Exchange
-}
+	"github.com/govalues/decimal"
+)
+
+type Exchanges map[string]Exchange
 
 type Exchange struct {
-	Name string
-}
-
-type Currencies struct {
-	Currencies []Currency
+	Id         string
+	Currencies map[string]Currency
+	Markets    map[string]Market
 }
 
 type Currency struct {
-	Id string
-}
-
-type Markets struct {
-	Markets []Market
+	Id            string
+	WithdrawalFee decimal.Decimal
 }
 
 type Market struct {
-	Id    string
-	Base  string
-	Quote string
+	Id        string
+	Base      string
+	Quote     string
+	Ask       decimal.Decimal
+	Bid       decimal.Decimal
+	TakerFee  decimal.Decimal
+	MakerFee  decimal.Decimal
+	Timestamp time.Time
 }
-
-// exchange rate data
