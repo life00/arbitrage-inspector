@@ -2,7 +2,6 @@
 - client
   - ...
 - data
-  - [ ] check if API credentials are correct
   - [ ] add support for identifying non-common currencies and markets
     - instead of solely restricting currencies and markets to only those which are commonly accessible, change the data structure and algorithms to allow for identifying non-common markets
     - would require reimplementing most of data package and creating a completely different exchanges based data structure for currencies and markets

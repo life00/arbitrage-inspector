@@ -1,14 +1,29 @@
 package data
 
 import (
+	"log/slog"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/ccxt/ccxt/go/v4"
+	"github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
+
+func TestMain(m *testing.M) {
+	// load .env for API credentials
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		slog.Error("failed to load .env file")
+		os.Exit(1)
+	}
+
+	m.Run()
+	os.Exit(0)
+}
 
 func TestValidateExchanges(t *testing.T) {
 	tests := []struct {

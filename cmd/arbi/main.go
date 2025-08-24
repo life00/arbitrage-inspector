@@ -33,7 +33,8 @@ func main() {
 	exchanges := models.Exchanges{
 		Exchanges: []models.Exchange{
 			{Name: "binance"},
-			{Name: "kucoin"},
+			{Name: "bitget"},
+			// {Name: "kucoin"},
 		},
 	}
 
@@ -43,6 +44,8 @@ func main() {
 			{Id: "ETH"},
 			{Id: "USDC"},
 			{Id: "DOGE"},
+			{Id: "SOL"},
+			{Id: "BNB"},
 		},
 	}
 

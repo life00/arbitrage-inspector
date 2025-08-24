@@ -119,6 +119,13 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 			// load markets to cache data and test connection
 			if _, err := ccxtExchange.LoadMarkets(); err != nil {
 				result.err = fmt.Errorf("failed to load markets for %s: %w", ex.Name, err)
+				resultsChan <- result
+				return
+			}
+
+			// fetch balance to test credentials
+			if _, err := ccxtExchange.FetchBalance(); err != nil {
+				result.err = fmt.Errorf("failed to authenticate for %s: %w", ex.Name, err)
 			}
 
 			resultsChan <- result
