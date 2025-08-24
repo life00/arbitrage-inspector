@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/ccxt/ccxt/go/v4"
-	"github.com/life00/arbitrage-inspector/internal/models"
+	// "github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func findMissingItems(itemsToCheck []string, sourceList []string) []string {
@@ -27,8 +27,8 @@ func findMissingItems(itemsToCheck []string, sourceList []string) []string {
 	return notFound
 }
 
-func validateExchanges(exchanges models.Exchanges) error {
-	if len(exchanges.Exchanges) == 0 {
+func validateExchanges(exchanges []string) error {
+	if len(exchanges) == 0 {
 		err := fmt.Errorf("list of exchanges is empty")
 		slog.Error(err.Error())
 		return err
@@ -53,13 +53,8 @@ func validateExchanges(exchanges models.Exchanges) error {
 		}
 	}
 
-	// extract the names from the Exchanges object
-	exchangeNames := make([]string, len(exchanges.Exchanges))
-	for i, exchange := range exchanges.Exchanges {
-		exchangeNames[i] = exchange.Name
-	}
 	// uses a reusable function
-	invalidExchanges := findMissingItems(exchangeNames, supportedExchanges)
+	invalidExchanges := findMissingItems(exchanges, supportedExchanges)
 
 	if len(invalidExchanges) > 0 {
 		err := fmt.Errorf("invalid exchanges: %s", strings.Join(invalidExchanges, ", "))
@@ -77,24 +72,24 @@ type exchangeResult struct {
 }
 
 // concurrently loads all exchanges with API credentials and fetches currency data into cache
-func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
+func loadCcxt(exchanges []string) ([]ccxt.IExchange, error) {
 	var wg sync.WaitGroup
-	resultsChan := make(chan exchangeResult, len(exchanges.Exchanges))
+	resultsChan := make(chan exchangeResult, len(exchanges))
 
 	// concurrently load all exchanges
-	for _, exchange := range exchanges.Exchanges {
+	for _, exchange := range exchanges {
 		wg.Add(1)
-		go func(ex models.Exchange) {
+		go func(ex string) {
 			defer wg.Done()
 			result := exchangeResult{}
 
-			slog.Debug(fmt.Sprintf("loading exchange %s...", ex.Name))
+			slog.Debug(fmt.Sprintf("loading exchange %s...", ex))
 
 			// handle credentials from .env
 			options := map[string]interface{}{}
-			apiKeyEnvName := strings.ToUpper(ex.Name) + "_API_KEY"
-			secretEnvName := strings.ToUpper(ex.Name) + "_SECRET"
-			passwordEnvName := strings.ToUpper(ex.Name) + "_PASSWORD"
+			apiKeyEnvName := strings.ToUpper(ex) + "_API_KEY"
+			secretEnvName := strings.ToUpper(ex) + "_SECRET"
+			passwordEnvName := strings.ToUpper(ex) + "_PASSWORD"
 
 			if apiKey := os.Getenv(apiKeyEnvName); apiKey != "" {
 				options["apiKey"] = apiKey
@@ -107,10 +102,10 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 			}
 
 			// instantiate the exchange object
-			ccxtExchange := ccxt.CreateExchange(ex.Name, options)
+			ccxtExchange := ccxt.CreateExchange(ex, options)
 
 			if ccxtExchange == nil {
-				result.err = fmt.Errorf("failed to create CCXT exchange for %s: exchange instance is nil", ex.Name)
+				result.err = fmt.Errorf("failed to create CCXT exchange for %s: exchange instance is nil", ex)
 				resultsChan <- result
 				return
 			}
@@ -118,14 +113,14 @@ func loadCcxt(exchanges models.Exchanges) ([]ccxt.IExchange, error) {
 
 			// load markets to cache data and test connection
 			if _, err := ccxtExchange.LoadMarkets(); err != nil {
-				result.err = fmt.Errorf("failed to load markets for %s: %w", ex.Name, err)
+				result.err = fmt.Errorf("failed to load markets for %s: %w", ex, err)
 				resultsChan <- result
 				return
 			}
 
 			// fetch balance to test credentials
 			if _, err := ccxtExchange.FetchBalance(); err != nil {
-				result.err = fmt.Errorf("failed to authenticate for %s: %w", ex.Name, err)
+				result.err = fmt.Errorf("failed to authenticate for %s: %w", ex, err)
 			}
 
 			resultsChan <- result
@@ -202,121 +197,121 @@ func getCommonItems[T any, U any](
 	return commonItems
 }
 
-func getCommonValidCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
-	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
-		return models.Currencies{}
-	}
+// func getCommonValidCurrencies(ccxtExchangesPtr *[]ccxt.IExchange) models.Currencies {
+// 	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
+// 		return models.Currencies{}
+// 	}
+//
+// 	// Define the function to process a single currency.
+// 	processCurrency := func(currency ccxt.Currency) (string, models.Currency, bool) {
+// 		// Validation logic for a currency.
+// 		if currency.Active == nil || !*currency.Active || currency.Deposit == nil || !*currency.Deposit || currency.Withdraw == nil || !*currency.Withdraw || currency.Id == nil {
+// 			return "", models.Currency{}, false
+// 		}
+// 		id := *currency.Id
+// 		return id, models.Currency{Id: id}, true
+// 	}
+//
+// 	// Call the generic helper.
+// 	commonCurrenciesMap := getCommonItems(
+// 		*ccxtExchangesPtr,
+// 		func(e ccxt.IExchange) []ccxt.Currency { return e.GetCurrenciesList() },
+// 		processCurrency,
+// 	)
+//
+// 	// Convert the result map into the final slice.
+// 	result := make([]models.Currency, 0, len(commonCurrenciesMap))
+// 	for _, currency := range commonCurrenciesMap {
+// 		result = append(result, currency)
+// 	}
+//
+// 	return models.Currencies{Currencies: result}
+// }
 
-	// Define the function to process a single currency.
-	processCurrency := func(currency ccxt.Currency) (string, models.Currency, bool) {
-		// Validation logic for a currency.
-		if currency.Active == nil || !*currency.Active || currency.Deposit == nil || !*currency.Deposit || currency.Withdraw == nil || !*currency.Withdraw || currency.Id == nil {
-			return "", models.Currency{}, false
-		}
-		id := *currency.Id
-		return id, models.Currency{Id: id}, true
-	}
+// func validateCurrencies(currencies models.Currencies, commonCurrencies models.Currencies) error {
+// 	if len(currencies.Currencies) == 0 {
+// 		err := fmt.Errorf("list of currencies is empty")
+// 		slog.Error(err.Error())
+// 		return err
+// 	}
+//
+// 	// extract currency ID into slices of strings
+// 	var currencyIds []string
+// 	for _, c := range currencies.Currencies {
+// 		currencyIds = append(currencyIds, c.Id)
+// 	}
+//
+// 	var commonCurrencyIds []string
+// 	for _, c := range commonCurrencies.Currencies {
+// 		commonCurrencyIds = append(commonCurrencyIds, c.Id)
+// 	}
+//
+// 	missingCurrencies := findMissingItems(currencyIds, commonCurrencyIds)
+//
+// 	if len(missingCurrencies) > 0 {
+// 		err := fmt.Errorf("invalid currencies: %s", strings.Join(missingCurrencies, ", "))
+// 		slog.Error(err.Error())
+// 		return err
+// 	}
+//
+// 	// no missing currencies
+// 	return nil
+// }
 
-	// Call the generic helper.
-	commonCurrenciesMap := getCommonItems(
-		*ccxtExchangesPtr,
-		func(e ccxt.IExchange) []ccxt.Currency { return e.GetCurrenciesList() },
-		processCurrency,
-	)
-
-	// Convert the result map into the final slice.
-	result := make([]models.Currency, 0, len(commonCurrenciesMap))
-	for _, currency := range commonCurrenciesMap {
-		result = append(result, currency)
-	}
-
-	return models.Currencies{Currencies: result}
-}
-
-func validateCurrencies(currencies models.Currencies, commonCurrencies models.Currencies) error {
-	if len(currencies.Currencies) == 0 {
-		err := fmt.Errorf("list of currencies is empty")
-		slog.Error(err.Error())
-		return err
-	}
-
-	// extract currency ID into slices of strings
-	var currencyIds []string
-	for _, c := range currencies.Currencies {
-		currencyIds = append(currencyIds, c.Id)
-	}
-
-	var commonCurrencyIds []string
-	for _, c := range commonCurrencies.Currencies {
-		commonCurrencyIds = append(commonCurrencyIds, c.Id)
-	}
-
-	missingCurrencies := findMissingItems(currencyIds, commonCurrencyIds)
-
-	if len(missingCurrencies) > 0 {
-		err := fmt.Errorf("invalid currencies: %s", strings.Join(missingCurrencies, ", "))
-		slog.Error(err.Error())
-		return err
-	}
-
-	// no missing currencies
-	return nil
-}
-
-func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
-	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
-		return models.Markets{}
-	}
-
-	// Define the function to process a single market.
-	processMarket := func(market ccxt.MarketInterface) (string, models.Market, bool) {
-		// Validation logic for a market.
-		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
-			return "", models.Market{}, false
-		}
-		model := models.Market{
-			Id:    *market.Symbol,
-			Base:  *market.BaseId,
-			Quote: *market.QuoteId,
-		}
-		return model.Id, model, true
-	}
-
-	// Call the generic helper.
-	commonMarketsMap := getCommonItems(
-		*ccxtExchangesPtr,
-		func(e ccxt.IExchange) []ccxt.MarketInterface { return e.GetMarketsList() },
-		processMarket,
-	)
-
-	// Convert the result map into the final slice.
-	result := make([]models.Market, 0, len(commonMarketsMap))
-	for _, market := range commonMarketsMap {
-		result = append(result, market)
-	}
-
-	return models.Markets{Markets: result}
-}
+// func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
+// 	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
+// 		return models.Markets{}
+// 	}
+//
+// 	// Define the function to process a single market.
+// 	processMarket := func(market ccxt.MarketInterface) (string, models.Market, bool) {
+// 		// Validation logic for a market.
+// 		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
+// 			return "", models.Market{}, false
+// 		}
+// 		model := models.Market{
+// 			Id:    *market.Symbol,
+// 			Base:  *market.BaseId,
+// 			Quote: *market.QuoteId,
+// 		}
+// 		return model.Id, model, true
+// 	}
+//
+// 	// Call the generic helper.
+// 	commonMarketsMap := getCommonItems(
+// 		*ccxtExchangesPtr,
+// 		func(e ccxt.IExchange) []ccxt.MarketInterface { return e.GetMarketsList() },
+// 		processMarket,
+// 	)
+//
+// 	// Convert the result map into the final slice.
+// 	result := make([]models.Market, 0, len(commonMarketsMap))
+// 	for _, market := range commonMarketsMap {
+// 		result = append(result, market)
+// 	}
+//
+// 	return models.Markets{Markets: result}
+// }
 
 // getMatchingMarkets finds all markets where both the base and quote currencies
 // are present in the provided list of currencies
-func getMatchingMarkets(commonMarkets models.Markets, currencies models.Currencies) models.Markets {
-	// set for quick lookups
-	currencySet := make(map[string]struct{})
-	for _, currency := range currencies.Currencies {
-		currencySet[currency.Id] = struct{}{}
-	}
-
-	var matchingMarkets []models.Market
-
-	for _, market := range commonMarkets.Markets {
-		_, hasBase := currencySet[market.Base]
-		_, hasQuote := currencySet[market.Quote]
-
-		if hasBase && hasQuote {
-			matchingMarkets = append(matchingMarkets, market)
-		}
-	}
-
-	return models.Markets{Markets: matchingMarkets}
-}
+// func getMatchingMarkets(commonMarkets models.Markets, currencies models.Currencies) models.Markets {
+// 	// set for quick lookups
+// 	currencySet := make(map[string]struct{})
+// 	for _, currency := range currencies.Currencies {
+// 		currencySet[currency.Id] = struct{}{}
+// 	}
+//
+// 	var matchingMarkets []models.Market
+//
+// 	for _, market := range commonMarkets.Markets {
+// 		_, hasBase := currencySet[market.Base]
+// 		_, hasQuote := currencySet[market.Quote]
+//
+// 		if hasBase && hasQuote {
+// 			matchingMarkets = append(matchingMarkets, market)
+// 		}
+// 	}
+//
+// 	return models.Markets{Markets: matchingMarkets}
+// }

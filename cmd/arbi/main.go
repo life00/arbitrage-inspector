@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/data"
-	"github.com/life00/arbitrage-inspector/internal/models"
+	// "github.com/life00/arbitrage-inspector/internal/models"
 )
 
 // main.go must be minimal with high abstraction
@@ -30,23 +30,18 @@ func main() {
 	}
 
 	// TODO: Parse cli arguments and define inputs
-	exchanges := models.Exchanges{
-		Exchanges: []models.Exchange{
-			{Name: "binance"},
-			{Name: "bitget"},
-			// {Name: "kucoin"},
-		},
+	exchanges := []string{
+		"binance",
+		"kucoin",
+		"bitget",
 	}
-
-	currencies := models.Currencies{
-		Currencies: []models.Currency{
-			{Id: "BTC"},
-			{Id: "ETH"},
-			{Id: "USDC"},
-			{Id: "DOGE"},
-			{Id: "SOL"},
-			{Id: "BNB"},
-		},
+	currencies := []string{
+		"BTC",
+		"ETH",
+		"USDC",
+		"DOGE",
+		"SOL",
+		"BNB",
 	}
 
 	// TODO: Define data structures
@@ -54,18 +49,25 @@ func main() {
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
 	slog.Info("initializing data fetcher...")
-	ccxtExchanges, markets, err := data.InitializeDataFetcher(exchanges, currencies)
+	data, clients, err := data.InitializeData(exchanges, currencies)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(ccxtExchanges, markets, len(markets.Markets))
+	// exchanges, err := data.InitializeDataFetcher(exchages, currencies)
+	fmt.Println(data, clients)
+
 	// 1.2. Fetching price data and fees
-	// ...
+
+	// exchanges, err := data.FetchData()
 
 	// 2. Arbitrage identification using arbitrage.go
-	// 2.1. Graph creation (with fees)
+	// 2.1. Graph creation
+
+	// graph, err := arbitrage.InitializeGraph(exchanges)
+
 	// 2.2. Bellman-Ford algorithm negative cycle detection
-	// 2.3. Arbitrage path retrieval
+
+	// path, err := arbitrage.RunBellmanFord(graph, source)
 
 	// 3. Trade execution using trade.go
 	// 3.1. While the arbitrage is still present continue the trading cycle (check using data.go)

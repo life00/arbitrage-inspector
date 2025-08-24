@@ -4,6 +4,7 @@ go 1.24.4
 
 require (
 	github.com/ccxt/ccxt/go/v4 v4.5.1
+	github.com/govalues/decimal v0.1.36
 	github.com/joho/godotenv v1.5.1
 )
 
