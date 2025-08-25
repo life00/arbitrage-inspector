@@ -2,9 +2,7 @@
 - client
   - ...
 - data
-  - [ ] add support for identifying non-common currencies and markets
-    - instead of solely restricting currencies and markets to only those which are commonly accessible, change the data structure and algorithms to allow for identifying non-common markets
-    - would require reimplementing most of data package and creating a completely different exchanges based data structure for currencies and markets
+  - [ ] create test files for createData() functions
   - [ ] create a function to actually fetch conversion price data and fees for specified markets
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies

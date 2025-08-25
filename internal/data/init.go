@@ -190,60 +190,88 @@ func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 	return nil
 }
 
-// func getCommonValidMarkets(ccxtExchangesPtr *[]ccxt.IExchange) models.Markets {
-// 	if ccxtExchangesPtr == nil || len(*ccxtExchangesPtr) == 0 {
-// 		return models.Markets{}
-// 	}
-//
-// 	// Define the function to process a single market.
-// 	processMarket := func(market ccxt.MarketInterface) (string, models.Market, bool) {
-// 		// Validation logic for a market.
-// 		if market.Active == nil || !*market.Active || market.Spot == nil || !*market.Spot || market.Symbol == nil || market.BaseId == nil || market.QuoteId == nil {
-// 			return "", models.Market{}, false
-// 		}
-// 		model := models.Market{
-// 			Id:    *market.Symbol,
-// 			Base:  *market.BaseId,
-// 			Quote: *market.QuoteId,
-// 		}
-// 		return model.Id, model, true
-// 	}
-//
-// 	// Call the generic helper.
-// 	commonMarketsMap := getCommonItems(
-// 		*ccxtExchangesPtr,
-// 		func(e ccxt.IExchange) []ccxt.MarketInterface { return e.GetMarketsList() },
-// 		processMarket,
-// 	)
-//
-// 	// Convert the result map into the final slice.
-// 	result := make([]models.Market, 0, len(commonMarketsMap))
-// 	for _, market := range commonMarketsMap {
-// 		result = append(result, market)
-// 	}
-//
-// 	return models.Markets{Markets: result}
-// }
+// createExchange handles the logic for a single CCXT exchange client.
+func createExchange(
+	clientPtr *ccxt.IExchange,
+	currencySet map[string]struct{},
+	wg *sync.WaitGroup,
+	mu *sync.Mutex,
+	exchanges models.Exchanges,
+) {
+	defer wg.Done()
+	client := *clientPtr
 
-// getMatchingMarkets finds all markets where both the base and quote currencies
-// are present in the provided list of currencies
-// func getMatchingMarkets(commonMarkets models.Markets, currencies models.Currencies) models.Markets {
-// 	// set for quick lookups
-// 	currencySet := make(map[string]struct{})
-// 	for _, currency := range currencies.Currencies {
-// 		currencySet[currency.Id] = struct{}{}
-// 	}
-//
-// 	var matchingMarkets []models.Market
-//
-// 	for _, market := range commonMarkets.Markets {
-// 		_, hasBase := currencySet[market.Base]
-// 		_, hasQuote := currencySet[market.Quote]
-//
-// 		if hasBase && hasQuote {
-// 			matchingMarkets = append(matchingMarkets, market)
-// 		}
-// 	}
-//
-// 	return models.Markets{Markets: matchingMarkets}
-// }
+	exchange := models.Exchange{
+		Id:         client.GetId(),
+		Markets:    []models.Market{},
+		Currencies: make(map[string]models.Currency),
+	}
+
+	exchange.Markets = createMarkets(clientPtr, currencySet)
+	exchange.Currencies = createCurrencies(clientPtr, currencySet)
+
+	mu.Lock()
+	exchanges[exchange.Id] = exchange
+	mu.Unlock()
+}
+
+// createMarkets gets initial data and creates a Markets object.
+func createMarkets(clientPtr *ccxt.IExchange, currencySet map[string]struct{}) []models.Market {
+	client := *clientPtr
+
+	var markets []models.Market
+	marketsList := client.GetMarketsList()
+
+	for _, m := range marketsList {
+		// check all market conditions
+		if m.Active != nil && *m.Active &&
+			m.Spot != nil && *m.Spot &&
+			m.Symbol != nil && m.BaseId != nil && m.QuoteId != nil {
+
+			baseId := strings.ToUpper(*m.BaseId)
+			quoteId := strings.ToUpper(*m.QuoteId)
+
+			// check if both base and quote currencies are in the input set
+			if _, baseExists := currencySet[baseId]; baseExists {
+				if _, quoteExists := currencySet[quoteId]; quoteExists {
+					markets = append(markets, models.Market{
+						Id:    *m.Symbol,
+						Base:  baseId,
+						Quote: quoteId,
+					})
+				}
+			}
+		}
+	}
+	return markets
+}
+
+// createCurrencies gets initial data and creates a Currencies object.
+func createCurrencies(clientPtr *ccxt.IExchange, currencySet map[string]struct{}) map[string]models.Currency {
+	client := *clientPtr
+
+	currenciesMap := make(map[string]models.Currency)
+
+	// all currencies to the map
+	for cur := range currencySet {
+		currenciesMap[cur] = models.Currency{Id: cur}
+	}
+
+	// iterate through the clients currency list and add any that meet the criteria
+	currenciesList := client.GetCurrenciesList()
+	for _, cur := range currenciesList {
+		// check all currency conditions
+		if cur.Active != nil && *cur.Active &&
+			cur.Deposit != nil && *cur.Deposit &&
+			cur.Withdraw != nil && *cur.Withdraw &&
+			cur.Id != nil {
+
+			currencyId := *cur.Id
+			if _, exists := currencySet[currencyId]; exists {
+				currenciesMap[currencyId] = models.Currency{Id: currencyId}
+			}
+		}
+	}
+
+	return currenciesMap
+}

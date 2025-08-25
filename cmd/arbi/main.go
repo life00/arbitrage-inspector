@@ -34,6 +34,7 @@ func main() {
 		"binance",
 		"kucoin",
 		"bitget",
+		"htx",
 	}
 	currencies := []string{
 		"BTC",
@@ -42,28 +43,30 @@ func main() {
 		"DOGE",
 		"SOL",
 		"BNB",
+		"USDT",
+		"BCH",
+		"LTC",
 	}
 
 	// TODO: Define data structures
 
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
-	slog.Info("initializing data fetcher...")
+	slog.Info("initializing data...")
 	data, clients, err := data.InitializeData(exchanges, currencies)
 	if err != nil {
-		panic(err)
+		os.Exit(1)
 	}
-	// exchanges, err := data.InitializeDataFetcher(exchages, currencies)
 	fmt.Println(data, clients)
 
 	// 1.2. Fetching price data and fees
 
-	// exchanges, err := data.FetchData()
+	// data, err := data.UpdateData(&data)
 
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Graph creation
 
-	// graph, err := arbitrage.InitializeGraph(exchanges)
+	// graph, err := arbitrage.InitializeGraph(data)
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 

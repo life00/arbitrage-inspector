@@ -2,6 +2,7 @@ package data
 
 import (
 	"log/slog"
+	"sync"
 
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
@@ -27,16 +28,29 @@ func validateInput(exchanges []string, currencies []string) (models.Clients, err
 	return clients, nil
 }
 
-// func getMarkets(ccxtExchangesPtr *[]ccxt.IExchange, currencies models.Currencies) models.Markets {
-// 	slog.Debug("identifying common markets...")
-// 	commonMarkets := getCommonValidMarkets(ccxtExchangesPtr)
-//
-// 	// find all possible currency pairs (available in the found common markets) based on input currencies
-// 	slog.Debug("deriving input markets...")
-// 	markets := getMatchingMarkets(commonMarkets, currencies)
-//
-// 	return markets
-// }
+// createData orchestrates the concurrent processing of exchange clients
+func createData(currencies []string, clientsPtr *models.Clients) models.Exchanges {
+	if clientsPtr == nil || len(*clientsPtr) == 0 {
+		return models.Exchanges{}
+	}
+
+	currencySet := make(map[string]struct{})
+	for _, c := range currencies {
+		currencySet[c] = struct{}{}
+	}
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	exchanges := make(models.Exchanges)
+
+	for _, client := range *clientsPtr {
+		wg.Add(1)
+		go createExchange(&client, currencySet, &wg, &mu, exchanges)
+	}
+
+	wg.Wait()
+	return exchanges
+}
 
 func InitializeData(exchanges []string, currencies []string) (models.Exchanges, models.Clients, error) {
 	slog.Info("validating inputs...")
@@ -45,8 +59,8 @@ func InitializeData(exchanges []string, currencies []string) (models.Exchanges, 
 		return nil, nil, err
 	}
 
-	// slog.Info("identifying markets...")
-	// markets := getMarkets(&ccxtExchanges, currencies)
+	slog.Info("creating data structure...")
+	data := createData(currencies, &clients)
 
-	return models.Exchanges{}, clients, nil
+	return data, clients, nil
 }
