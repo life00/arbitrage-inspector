@@ -35,18 +35,29 @@ func validateExchanges(exchanges []string) error {
 	}
 	supportedExchanges := []string{}
 
+	requiredFunctions := []string{
+		"fetchCurrencies",
+		"fetchMarkets",
+		"fetchTickers",
+		"createOrder",
+		"fetchBalance",
+		"withdraw",
+		"fetchDepositAddress",
+	}
+
 	for _, exchangeID := range ccxt.Exchanges {
 		exchange := ccxt.CreateExchange(exchangeID, nil)
-
-		// use the GetHas() method to check
 		has := exchange.GetHas()
-		if has["fetchCurrencies"] == true &&
-			has["fetchMarkets"] == true &&
-			has["fetchTickers"] == true &&
-			has["createOrder"] == true &&
-			has["fetchBalance"] == true &&
-			has["withdraw"] == true &&
-			has["fetchDepositAddress"] == true {
+
+		isSupported := false
+		for _, capability := range requiredFunctions {
+			if has[capability] == true || has[capability] == "emulated" {
+				isSupported = true
+				break
+			}
+		}
+
+		if isSupported {
 			supportedExchanges = append(supportedExchanges, exchangeID)
 		}
 	}

@@ -4,6 +4,8 @@
 - data
   - [ ] find and fix the race condition somewhere in InitializeData()
   - [ ] create a function to actually fetch conversion price data and fees for specified markets
+    - when implementing keep in mind that the withdraw fee actually depends on the specific chosen network
+    - therefore its necessary to find the cheapest active network and also save it for further use in trade
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
 - arbitrage
