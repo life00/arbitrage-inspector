@@ -20,6 +20,7 @@ type Exchange struct {
 type Currency struct {
 	Id            string
 	WithdrawalFee decimal.Decimal
+	Network       string
 }
 
 type Market struct {
