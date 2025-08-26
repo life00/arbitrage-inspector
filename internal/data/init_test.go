@@ -3,8 +3,8 @@ package data
 import (
 	"log/slog"
 	"os"
-	// "reflect"
-	// "sort"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -113,7 +113,6 @@ func TestLoadCcxt(t *testing.T) {
 }
 
 // mockExchange implements the ccxt.IExchange interface for testing.
-// we only need to implement the methods that getCommonCurrencies actually calls.
 type mockExchange struct {
 	ccxt.IExchange // Embed the interface to satisfy it implicitly.
 	name           string
@@ -121,9 +120,19 @@ type mockExchange struct {
 	markets        []ccxt.MarketInterface
 }
 
+// GetId overrides the embedded interface's method.
+func (m *mockExchange) GetId() string {
+	return m.name
+}
+
 // GetCurrenciesList overrides the embedded interface's method.
 func (m *mockExchange) GetCurrenciesList() []ccxt.Currency {
 	return m.currencies
+}
+
+// GetMarketsList overrides the embedded interface's method.
+func (m *mockExchange) GetMarketsList() []ccxt.MarketInterface {
+	return m.markets
 }
 
 // newCurrency is a test helper to create a ccxt.Currency
@@ -137,6 +146,17 @@ func newCurrency(id string) ccxt.Currency {
 		Active:   &active,
 		Deposit:  &deposit,
 		Withdraw: &withdraw,
+	}
+}
+
+// newMarket is a test helper to create a ccxt.MarketInterface with all required fields valid.
+func newMarket(symbol, baseId, quoteId string, active, spot bool) ccxt.MarketInterface {
+	return ccxt.MarketInterface{
+		Symbol:  &symbol,
+		BaseId:  &baseId,
+		QuoteId: &quoteId,
+		Active:  &active,
+		Spot:    &spot,
 	}
 }
 
@@ -229,236 +249,132 @@ func TestValidateCurrencies(t *testing.T) {
 	}
 }
 
-// // GetMarketsList overrides the embedded interface's method.
-// func (m *mockExchange) GetMarketsList() []ccxt.MarketInterface {
-// 	return m.markets
-// }
-//
-// // newMarket is a test helper to create a ccxt.Market with all required fields valid.
-// func newMarket(symbol, baseId, quoteId string) ccxt.MarketInterface {
-// 	active := true
-// 	spot := true
-// 	return ccxt.MarketInterface{
-// 		Symbol:  &symbol,
-// 		BaseId:  &baseId,
-// 		QuoteId: &quoteId,
-// 		Active:  &active,
-// 		Spot:    &spot,
-// 	}
-// }
-//
-// func TestGetCommonValidMarkets(t *testing.T) {
-// 	tests := []struct {
-// 		name      string
-// 		exchanges []ccxt.IExchange
-// 		want      models.Markets
-// 	}{
-// 		{
-// 			name:      "no exchanges",
-// 			exchanges: []ccxt.IExchange{},
-// 			want:      models.Markets{},
-// 		},
-// 		{
-// 			name: "one exchange",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{
-// 					name: "exchangeA",
-// 					markets: []ccxt.MarketInterface{
-// 						newMarket("BTC/USDC", "BTC", "USDC"),
-// 						newMarket("ETH/USDC", "ETH", "USDC"),
-// 					},
-// 				},
-// 			},
-// 			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}, {Id: "ETH/USDC", Base: "ETH", Quote: "USDC"}}},
-// 		},
-// 		{
-// 			name: "two exchanges with common markets",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{
-// 					name: "exchangeA",
-// 					markets: []ccxt.MarketInterface{
-// 						newMarket("BTC/USDC", "BTC", "USDC"),
-// 						newMarket("ETH/USDC", "ETH", "USDC"),
-// 						newMarket("XRP/USDC", "XRP", "USDC"),
-// 					},
-// 				},
-// 				&mockExchange{
-// 					name: "exchangeB",
-// 					markets: []ccxt.MarketInterface{
-// 						newMarket("ETH/USDC", "ETH", "USDC"),
-// 						newMarket("LTC/USDC", "LTC", "USDC"),
-// 						newMarket("BTC/USDC", "BTC", "USDC"),
-// 					},
-// 				},
-// 			},
-// 			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}, {Id: "ETH/USDC", Base: "ETH", Quote: "USDC"}}},
-// 		},
-// 		{
-// 			name: "multiple exchanges with one common market",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("ETH/USDC", "ETH", "USDC")}},
-// 				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("LTC/USDC", "LTC", "USDC"), newMarket("BTC/USDC", "BTC", "USDC")}},
-// 				&mockExchange{name: "C", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("XRP/USDC", "XRP", "USDC")}},
-// 			},
-// 			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}}},
-// 		},
-// 		{
-// 			name: "exchanges with no common markets",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("ETH/USDC", "ETH", "USDC")}},
-// 				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("LTC/USDC", "LTC", "USDC"), newMarket("XRP/USDC", "XRP", "USDC")}},
-// 			},
-// 			want: models.Markets{Markets: []models.Market{}},
-// 		},
-// 		{
-// 			name: "handles markets with nil ID gracefully",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), {Symbol: nil}, newMarket("ETH/USDC", "ETH", "USDC")}},
-// 				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("LTC/USDC", "LTC", "USDC")}},
-// 			},
-// 			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}}},
-// 		},
-// 		{
-// 			name: "handles inactive markets",
-// 			exchanges: []ccxt.IExchange{
-// 				&mockExchange{name: "A", markets: []ccxt.MarketInterface{
-// 					newMarket("BTC/USDC", "BTC", "USDC"),
-// 					func() ccxt.MarketInterface {
-// 						symbol, active, spot := "ETH/USDC", false, true
-// 						return ccxt.MarketInterface{Symbol: &symbol, Active: &active, Spot: &spot}
-// 					}(),
-// 				}},
-// 				&mockExchange{name: "B", markets: []ccxt.MarketInterface{newMarket("BTC/USDC", "BTC", "USDC"), newMarket("LTC/USDC", "LTC", "USDC")}},
-// 			},
-// 			want: models.Markets{Markets: []models.Market{{Id: "BTC/USDC", Base: "BTC", Quote: "USDC"}}},
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got := getCommonValidMarkets(&tt.exchanges)
-//
-// 			// Sort both slices for consistent comparison.
-// 			sort.Slice(got.Markets, func(i, j int) bool {
-// 				return got.Markets[i].Id < got.Markets[j].Id
-// 			})
-// 			sort.Slice(tt.want.Markets, func(i, j int) bool {
-// 				return tt.want.Markets[i].Id < tt.want.Markets[j].Id
-// 			})
-//
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("getCommonValidMarkets() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
+func TestCreateData(t *testing.T) {
+	exchangeA := &mockExchange{
+		name: "exchangeA",
+		currencies: []ccxt.Currency{
+			newCurrency("BTC"),
+			newCurrency("ETH"),
+			newCurrency("USDT"),
+			// Inactive currency
+			func() ccxt.Currency {
+				id, active := "XRP", false
+				return ccxt.Currency{Id: &id, Active: &active}
+			}(),
+		},
+		markets: []ccxt.MarketInterface{
+			// Valid market
+			newMarket("BTC/USDT", "BTC", "USDT", true, true),
+			// Market with a currency not in the input set
+			newMarket("ETH/DAI", "ETH", "DAI", true, true),
+			// Inactive market
+			newMarket("XRP/USDT", "XRP", "USDT", false, true),
+			// Non-spot market
+			newMarket("LTC/USDT", "LTC", "USDT", true, false),
+		},
+	}
 
-// func TestGetMatchingMarkets(t *testing.T) {
-// 	testCases := []struct {
-// 		name          string
-// 		commonMarkets models.Markets
-// 		currencies    models.Currencies
-// 		want          models.Markets
-// 	}{
-// 		{
-// 			name: "All markets match",
-// 			commonMarkets: models.Markets{
-// 				Markets: []models.Market{
-// 					{Id: "1", Base: "USD", Quote: "EUR"},
-// 					{Id: "2", Base: "BTC", Quote: "USD"},
-// 				},
-// 			},
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "USD"},
-// 					{Id: "EUR"},
-// 					{Id: "BTC"},
-// 				},
-// 			},
-// 			want: models.Markets{
-// 				Markets: []models.Market{
-// 					{Id: "1", Base: "USD", Quote: "EUR"},
-// 					{Id: "2", Base: "BTC", Quote: "USD"},
-// 				},
-// 			},
-// 		},
-// 		{
-// 			name: "Some markets match",
-// 			commonMarkets: models.Markets{
-// 				Markets: []models.Market{
-// 					{Id: "1", Base: "USD", Quote: "EUR"},
-// 					{Id: "2", Base: "BTC", Quote: "USD"},
-// 					{Id: "3", Base: "JPY", Quote: "EUR"}, // Base JPY is not in currencies list
-// 				},
-// 			},
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "USD"},
-// 					{Id: "EUR"},
-// 					{Id: "BTC"},
-// 				},
-// 			},
-// 			want: models.Markets{
-// 				Markets: []models.Market{
-// 					{Id: "1", Base: "USD", Quote: "EUR"},
-// 					{Id: "2", Base: "BTC", Quote: "USD"},
-// 				},
-// 			},
-// 		},
-// 		{
-// 			name: "No markets match",
-// 			commonMarkets: models.Markets{
-// 				Markets: []models.Market{
-// 					{Id: "1", Base: "USD", Quote: "EUR"},
-// 					{Id: "2", Base: "BTC", Quote: "USD"},
-// 				},
-// 			},
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "AUD"},
-// 					{Id: "CAD"},
-// 				},
-// 			},
-// 			want: models.Markets{
-// 				Markets: nil,
-// 			},
-// 		},
-// 		{
-// 			name: "Empty common markets",
-// 			commonMarkets: models.Markets{
-// 				Markets: []models.Market{},
-// 			},
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{
-// 					{Id: "USD"},
-// 				},
-// 			},
-// 			want: models.Markets{
-// 				Markets: nil,
-// 			},
-// 		},
-// 		{
-// 			name: "Empty currencies list",
-// 			commonMarkets: models.Markets{
-// 				Markets: []models.Market{
-// 					{Id: "1", Base: "USD", Quote: "EUR"},
-// 				},
-// 			},
-// 			currencies: models.Currencies{
-// 				Currencies: []models.Currency{},
-// 			},
-// 			want: models.Markets{
-// 				Markets: nil,
-// 			},
-// 		},
-// 	}
-//
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			result := getMatchingMarkets(tc.commonMarkets, tc.currencies)
-// 			if !reflect.DeepEqual(result, tc.want) {
-// 				t.Errorf("For test case '%s', got unexpected result.\nExpected: %+v\nGot: %+v", tc.name, tc.want, result)
-// 			}
-// 		})
-// 	}
-// }
+	exchangeB := &mockExchange{
+		name: "exchangeB",
+		currencies: []ccxt.Currency{
+			newCurrency("BTC"),
+			newCurrency("USDT"),
+			newCurrency("ADA"),
+		},
+		markets: []ccxt.MarketInterface{
+			newMarket("BTC/USDT", "BTC", "USDT", true, true),
+			newMarket("ADA/USDT", "ADA", "USDT", true, true),
+		},
+	}
+
+	tests := []struct {
+		name       string
+		currencies []string
+		clientsPtr *models.Clients
+		want       models.Exchanges
+	}{
+		{
+			name:       "Processes two exchanges concurrently",
+			currencies: []string{"BTC", "USDT", "ADA"},
+			clientsPtr: &models.Clients{
+				"exchangeA": exchangeA,
+				"exchangeB": exchangeB,
+			},
+			want: models.Exchanges{
+				"exchangeA": {
+					Id: "exchangeA",
+					Markets: []models.Market{
+						{Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
+					},
+					Currencies: map[string]models.Currency{
+						"BTC":  {Id: "BTC"},
+						"USDT": {Id: "USDT"},
+						"ADA":  {Id: "ADA"}, // Still present from initial set
+					},
+				},
+				"exchangeB": {
+					Id: "exchangeB",
+					Markets: []models.Market{
+						{Id: "ADA/USDT", Base: "ADA", Quote: "USDT"},
+						{Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
+					},
+					Currencies: map[string]models.Currency{
+						"BTC":  {Id: "BTC"},
+						"USDT": {Id: "USDT"},
+						"ADA":  {Id: "ADA"},
+					},
+				},
+			},
+		},
+		{
+			name:       "Handles no clients",
+			currencies: []string{"BTC", "USDT"},
+			clientsPtr: &models.Clients{},
+			want:       models.Exchanges{},
+		},
+		{
+			name:       "Handles nil clients pointer",
+			currencies: []string{"BTC", "USDT"},
+			clientsPtr: nil,
+			want:       models.Exchanges{},
+		},
+		{
+			name:       "Handles no input currencies",
+			currencies: []string{},
+			clientsPtr: &models.Clients{"exchangeA": exchangeA},
+			want: models.Exchanges{
+				"exchangeA": {
+					Id:         "exchangeA",
+					Markets:    []models.Market{},
+					Currencies: map[string]models.Currency{},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := createData(tt.currencies, tt.clientsPtr)
+
+			// Sort market slices for deterministic comparison
+			for id := range got {
+				exchange := got[id]
+				sort.Slice(exchange.Markets, func(i, j int) bool {
+					return exchange.Markets[i].Id < exchange.Markets[j].Id
+				})
+				got[id] = exchange
+			}
+			for id := range tt.want {
+				exchange := tt.want[id]
+				sort.Slice(exchange.Markets, func(i, j int) bool {
+					return exchange.Markets[i].Id < exchange.Markets[j].Id
+				})
+				tt.want[id] = exchange
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("createData() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
