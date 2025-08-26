@@ -3,14 +3,14 @@ module github.com/life00/arbitrage-inspector
 go 1.24.4
 
 require (
-	github.com/ccxt/ccxt/go/v4 v4.5.1
+	github.com/ccxt/ccxt/go/v4 v4.5.2
 	github.com/govalues/decimal v0.1.36
 	github.com/joho/godotenv v1.5.1
 )
 
 require (
 	github.com/bits-and-blooms/bitset v1.24.0 // indirect
-	github.com/consensys/gnark-crypto v0.18.0 // indirect
+	github.com/consensys/gnark-crypto v0.19.0 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.3.0 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
