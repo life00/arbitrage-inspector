@@ -2,7 +2,7 @@
 - client
   - ...
 - data
-  - [ ] create test files for createData() functions
+  - [ ] find and fix the race condition somewhere in InitializeData()
   - [ ] create a function to actually fetch conversion price data and fees for specified markets
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
