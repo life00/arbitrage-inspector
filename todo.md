@@ -2,7 +2,6 @@
 - client
   - ...
 - data
-  - [ ] find and fix the race condition somewhere in InitializeData()
   - [ ] create a function to actually fetch conversion price data and fees for specified markets
     - when implementing keep in mind that the withdraw fee actually depends on the specific chosen network
     - therefore its necessary to find the cheapest active network and also save it for further use in trade
