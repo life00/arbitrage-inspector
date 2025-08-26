@@ -43,8 +43,6 @@ func validateExchanges(exchanges []string) error {
 		if has["fetchCurrencies"] == true &&
 			has["fetchMarkets"] == true &&
 			has["fetchTickers"] == true &&
-			has["fetchDepositWithdrawFees"] == true &&
-			// has["fetchTradingFees"] == true && // NOTE: I don't think this feature is necessary; this can be found in fetchCurrencies()
 			has["createOrder"] == true &&
 			has["fetchBalance"] == true &&
 			has["withdraw"] == true &&
