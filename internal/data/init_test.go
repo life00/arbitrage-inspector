@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"os"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -303,20 +302,22 @@ func TestCreateData(t *testing.T) {
 			want: models.Exchanges{
 				"exchangeA": {
 					Id: "exchangeA",
-					Markets: []models.Market{
-						{Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
+					// Changed to a map
+					Markets: map[string]models.Market{
+						"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
 					},
 					Currencies: map[string]models.Currency{
 						"BTC":  {Id: "BTC"},
 						"USDT": {Id: "USDT"},
-						"ADA":  {Id: "ADA"}, // Still present from initial set
+						"ADA":  {Id: "ADA"},
 					},
 				},
 				"exchangeB": {
 					Id: "exchangeB",
-					Markets: []models.Market{
-						{Id: "ADA/USDT", Base: "ADA", Quote: "USDT"},
-						{Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
+					// Changed to a map
+					Markets: map[string]models.Market{
+						"ADA/USDT": {Id: "ADA/USDT", Base: "ADA", Quote: "USDT"},
+						"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
 					},
 					Currencies: map[string]models.Currency{
 						"BTC":  {Id: "BTC"},
@@ -344,8 +345,9 @@ func TestCreateData(t *testing.T) {
 			clientsPtr: &models.Clients{"exchangeA": exchangeA},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id:         "exchangeA",
-					Markets:    []models.Market{},
+					Id: "exchangeA",
+					// Changed to an empty map
+					Markets:    map[string]models.Market{},
 					Currencies: map[string]models.Currency{},
 				},
 			},
@@ -355,22 +357,6 @@ func TestCreateData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := createData(tt.currencies, tt.clientsPtr)
-
-			// Sort market slices for deterministic comparison
-			for id := range got {
-				exchange := got[id]
-				sort.Slice(exchange.Markets, func(i, j int) bool {
-					return exchange.Markets[i].Id < exchange.Markets[j].Id
-				})
-				got[id] = exchange
-			}
-			for id := range tt.want {
-				exchange := tt.want[id]
-				sort.Slice(exchange.Markets, func(i, j int) bool {
-					return exchange.Markets[i].Id < exchange.Markets[j].Id
-				})
-				tt.want[id] = exchange
-			}
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createData() = %+v, want %+v", got, tt.want)

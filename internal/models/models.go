@@ -14,7 +14,7 @@ type Exchanges map[string]Exchange
 type Exchange struct {
 	Id         string
 	Currencies map[string]Currency
-	Markets    []Market
+	Markets    map[string]Market
 }
 
 type Currency struct {
