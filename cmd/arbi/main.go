@@ -30,13 +30,13 @@ func main() {
 	}
 
 	// TODO: Parse cli arguments and define inputs
-	exchanges := []string{
+	inputExchanges := []string{
 		"binance",
 		"kucoin",
 		"bitget",
 		// "htx",
 	}
-	currencies := []string{
+	inputCurrencies := []string{
 		"BTC",
 		"ETH",
 		"USDC",
@@ -53,7 +53,7 @@ func main() {
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
 	slog.Info("initializing data...")
-	exchangeData, clients, err := data.InitializeData(exchanges, currencies)
+	exchanges, clients, err := data.InitializeExchanges(inputExchanges, inputCurrencies)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -62,14 +62,14 @@ func main() {
 	// 1.2. Fetching price data and fees
 
 	slog.Info("updating exchange data...")
-	err = data.UpdateData(&exchangeData, &clients, true, true)
+	err = data.UpdateExchanges(&exchanges, &clients, true, true)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	slog.Info("successfully updated exchange data")
 
-	fmt.Println(exchangeData, clients)
+	fmt.Println(exchanges, clients)
 
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Graph creation

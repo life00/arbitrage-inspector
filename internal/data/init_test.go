@@ -356,7 +356,7 @@ func TestCreateData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := createData(tt.currencies, tt.clientsPtr)
+			got := createExchanges(tt.currencies, tt.clientsPtr)
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createData() = %+v, want %+v", got, tt.want)

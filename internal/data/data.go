@@ -30,8 +30,8 @@ func validateInput(exchanges []string, currencies []string) (models.Clients, err
 	return clients, nil
 }
 
-// createData orchestrates the concurrent processing of exchange clients
-func createData(currencies []string, clientsPtr *models.Clients) models.Exchanges {
+// createExchanges orchestrates the concurrent processing of exchange clients
+func createExchanges(currencies []string, clientsPtr *models.Clients) models.Exchanges {
 	if clientsPtr == nil || len(*clientsPtr) == 0 {
 		return models.Exchanges{}
 	}
@@ -54,20 +54,20 @@ func createData(currencies []string, clientsPtr *models.Clients) models.Exchange
 	return exchanges
 }
 
-func InitializeData(exchanges []string, currencies []string) (models.Exchanges, models.Clients, error) {
+func InitializeExchanges(inputExchanges []string, inputCurrencies []string) (models.Exchanges, models.Clients, error) {
 	slog.Info("validating inputs...")
-	clients, err := validateInput(exchanges, currencies)
+	clients, err := validateInput(inputExchanges, inputCurrencies)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	slog.Info("creating data structure...")
-	data := createData(currencies, &clients)
+	exchanges := createExchanges(inputCurrencies, &clients)
 
-	return data, clients, nil
+	return exchanges, clients, nil
 }
 
-func UpdateData(
+func UpdateExchanges(
 	exchangesPtr *models.Exchanges,
 	clientsPtr *models.Clients,
 	updateCurrencyFees bool,
@@ -106,7 +106,7 @@ func UpdateData(
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("data update failed with %d error(s):\n- %s", len(errors), strings.Join(errors, "\n- "))
+		return fmt.Errorf("exchange data update failed with %d error(s):\n- %s", len(errors), strings.Join(errors, "\n- "))
 	}
 
 	return nil
