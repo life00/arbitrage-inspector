@@ -1,7 +1,9 @@
 package data
 
 import (
+	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/life00/arbitrage-inspector/internal/models"
@@ -63,4 +65,49 @@ func InitializeData(exchanges []string, currencies []string) (models.Exchanges, 
 	data := createData(currencies, &clients)
 
 	return data, clients, nil
+}
+
+func UpdateData(
+	exchangesPtr *models.Exchanges,
+	clientsPtr *models.Clients,
+	updateCurrencyFees bool,
+	updateMarketFees bool,
+) error {
+	if clientsPtr == nil || len(*clientsPtr) == 0 {
+		return fmt.Errorf("list of clients is empty")
+	}
+	if exchangesPtr == nil || len(*exchangesPtr) == 0 {
+		return fmt.Errorf("list of exchange data is empty")
+	}
+	if len(*clientsPtr) != len(*exchangesPtr) {
+		return fmt.Errorf("length of clients and exchange data is not matching")
+	}
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	errChan := make(chan error, len(*clientsPtr))
+
+	for _, client := range *clientsPtr {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := updateExchange(&client, &mu, exchangesPtr, updateCurrencyFees, updateMarketFees); err != nil {
+				errChan <- fmt.Errorf("[Exchange: %s] %w", client.GetId(), err)
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	var errors []string
+	for err := range errChan {
+		errors = append(errors, err.Error())
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("data update failed with %d error(s):\n- %s", len(errors), strings.Join(errors, "\n- "))
+	}
+
+	return nil
 }

@@ -34,7 +34,7 @@ func main() {
 		"binance",
 		"kucoin",
 		"bitget",
-		"htx",
+		// "htx",
 	}
 	currencies := []string{
 		"BTC",
@@ -53,15 +53,23 @@ func main() {
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
 	slog.Info("initializing data...")
-	data, clients, err := data.InitializeData(exchanges, currencies)
+	exchangeData, clients, err := data.InitializeData(exchanges, currencies)
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println(data, clients)
 
 	// 1.2. Fetching price data and fees
 
-	// data, err := data.UpdateData(&data)
+	slog.Info("updating exchange data...")
+	err = data.UpdateData(&exchangeData, &clients, true, true)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	slog.Info("successfully updated exchange data")
+
+	fmt.Println(exchangeData, clients)
 
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Graph creation
