@@ -13,15 +13,16 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelError,
+	})))
 	// load .env for API credentials
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		slog.Error("failed to load .env file")
 		os.Exit(1)
 	}
-
-	m.Run()
-	os.Exit(0)
+	os.Exit(m.Run())
 }
 
 func TestValidateExchanges(t *testing.T) {
