@@ -85,7 +85,7 @@ func updatePrices(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
 	client := *clientPtr
 	tickers, err := client.FetchTickers()
 	if err != nil {
-		return fmt.Errorf("API call failed:: %w", err)
+		return fmt.Errorf("API call failed: %w", err)
 	}
 	if len(tickers.Tickers) == 0 {
 		return nil

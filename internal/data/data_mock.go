@@ -9,11 +9,14 @@ import (
 // mockExchange implements the ccxt.IExchange interface for testing
 type mockExchange struct {
 	ccxt.IExchange
-	name          string
-	currencies    []ccxt.Currency
-	apiCurrencies ccxt.Currencies
-	markets       []ccxt.MarketInterface
-	tickers       ccxt.Tickers
+	name                 string
+	currencies           []ccxt.Currency
+	apiCurrencies        ccxt.Currencies
+	markets              []ccxt.MarketInterface
+	tickers              ccxt.Tickers
+	fetchTickersError    error
+	fetchCurrenciesError error
+	fetchMarketsError    error
 }
 
 func (m *mockExchange) GetId() string {
@@ -28,7 +31,10 @@ func (m *mockExchange) GetMarketsList() []ccxt.MarketInterface {
 	return m.markets
 }
 
-func (m *mockExchange) FetchCurrencies(params ...interface{}) (ccxt.Currencies, error) {
+func (m *mockExchange) FetchCurrencies(args ...interface{}) (ccxt.Currencies, error) {
+	if m.fetchCurrenciesError != nil {
+		return ccxt.Currencies{}, m.fetchCurrenciesError
+	}
 	return m.apiCurrencies, nil
 }
 
@@ -37,12 +43,17 @@ func (m *mockExchange) FetchCurrencies(params ...interface{}) (ccxt.Currencies, 
 // 	Currencies map[string]Currency
 // }
 
-// Add the missing FetchMarkets method to satisfy the ccxt.IExchange interface
-func (m *mockExchange) FetchMarkets(params ...interface{}) ([]ccxt.MarketInterface, error) {
+func (m *mockExchange) FetchMarkets(args ...interface{}) ([]ccxt.MarketInterface, error) {
+	if m.fetchMarketsError != nil {
+		return nil, m.fetchMarketsError
+	}
 	return m.markets, nil
 }
 
 func (m *mockExchange) FetchTickers(options ...ccxt.FetchTickersOptions) (ccxt.Tickers, error) {
+	if m.fetchTickersError != nil {
+		return ccxt.Tickers{}, m.fetchTickersError
+	}
 	return m.tickers, nil
 }
 
