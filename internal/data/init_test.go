@@ -112,54 +112,6 @@ func TestLoadCcxt(t *testing.T) {
 	}
 }
 
-// mockExchange implements the ccxt.IExchange interface for testing.
-type mockExchange struct {
-	ccxt.IExchange // Embed the interface to satisfy it implicitly.
-	name           string
-	currencies     []ccxt.Currency
-	markets        []ccxt.MarketInterface
-}
-
-// GetId overrides the embedded interface's method.
-func (m *mockExchange) GetId() string {
-	return m.name
-}
-
-// GetCurrenciesList overrides the embedded interface's method.
-func (m *mockExchange) GetCurrenciesList() []ccxt.Currency {
-	return m.currencies
-}
-
-// GetMarketsList overrides the embedded interface's method.
-func (m *mockExchange) GetMarketsList() []ccxt.MarketInterface {
-	return m.markets
-}
-
-// newCurrency is a test helper to create a ccxt.Currency
-// with a non-nil ID pointer and all boolean fields set to true.
-func newCurrency(id string) ccxt.Currency {
-	active := true
-	deposit := true
-	withdraw := true
-	return ccxt.Currency{
-		Id:       &id,
-		Active:   &active,
-		Deposit:  &deposit,
-		Withdraw: &withdraw,
-	}
-}
-
-// newMarket is a test helper to create a ccxt.MarketInterface with all required fields valid.
-func newMarket(symbol, baseId, quoteId string, active, spot bool) ccxt.MarketInterface {
-	return ccxt.MarketInterface{
-		Symbol:  &symbol,
-		BaseId:  &baseId,
-		QuoteId: &quoteId,
-		Active:  &active,
-		Spot:    &spot,
-	}
-}
-
 func TestValidateCurrencies(t *testing.T) {
 	exchangeA := &mockExchange{
 		name:       "exchangeA",
