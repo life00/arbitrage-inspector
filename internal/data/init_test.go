@@ -1,32 +1,16 @@
 package data
 
 import (
-	"log/slog"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/ccxt/ccxt/go/v4"
-	"github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func TestMain(m *testing.M) {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelError,
-	})))
-	// load .env for API credentials
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		slog.Error("failed to load .env file")
-		os.Exit(1)
-	}
-	os.Exit(m.Run())
-}
-
 func TestValidateExchanges(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		name      string
 		exchanges []string
 		wantErr   bool
@@ -53,148 +37,138 @@ func TestValidateExchanges(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateExchanges(tt.exchanges); (err != nil) != tt.wantErr {
-				t.Errorf("validateExchanges() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := validateExchanges(tc.exchanges); (err != nil) != tc.wantErr {
+				t.Errorf("validateExchanges() error = %v, wantErr %v", err, tc.wantErr)
 			}
 		})
 	}
 }
 
 func TestLoadCcxt(t *testing.T) {
-	// Skip integration tests if the -short flag is provided, as they make network calls.
 	if testing.Short() {
 		t.Skip("skipping integration tests in short mode")
 	}
 
-	tests := []struct {
-		name        string
-		exchanges   []string
-		wantErr     bool
-		errContains string
-		wantLoaded  int
+	testCases := []struct {
+		name            string
+		exchanges       []string
+		wantErr         bool
+		wantErrContains string
+		wantLoaded      int
 	}{
 		{
-			name:       "load valid public exchange (integration)",
+			name:       "load valid public exchange",
 			exchanges:  []string{"binance"},
 			wantErr:    false,
 			wantLoaded: 1,
 		},
 		{
-			name:        "fail with invalid exchange name",
-			exchanges:   []string{"invalidexchange"},
-			wantErr:     true,
-			errContains: "failed to create CCXT exchange for invalidexchange",
-			wantLoaded:  0,
+			name:            "fail with invalid exchange name",
+			exchanges:       []string{"invalidexchange"},
+			wantErr:         true,
+			wantErrContains: "failed to create CCXT exchange for invalidexchange",
+			wantLoaded:      0,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			loadedExchanges, err := loadClient(tt.exchanges)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			loadedExchanges, err := loadClient(tc.exchanges)
 
-			if (err != nil) != tt.wantErr {
-				t.Errorf("loadCcxt() error = %v, wantErr %v", err, tt.wantErr)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("loadCcxt() error = %v, wantErr %v", err, tc.wantErr)
 				return
 			}
 
-			if err != nil && tt.errContains != "" {
-				if !strings.Contains(err.Error(), tt.errContains) {
-					t.Errorf("loadCcxt() error = %q, want error containing %q", err.Error(), tt.errContains)
+			if err != nil && tc.wantErrContains != "" {
+				if !strings.Contains(err.Error(), tc.wantErrContains) {
+					t.Errorf("loadCcxt() error = %q, want error containing %q", err.Error(), tc.wantErrContains)
 				}
 			}
 
-			if len(loadedExchanges) != tt.wantLoaded {
-				t.Errorf("loadCcxt() loaded %d exchanges, want %d", len(loadedExchanges), tt.wantLoaded)
+			if len(loadedExchanges) != tc.wantLoaded {
+				t.Errorf("loadCcxt() loaded %d exchanges, want %d", len(loadedExchanges), tc.wantLoaded)
 			}
 		})
 	}
 }
 
 func TestValidateCurrencies(t *testing.T) {
-	exchangeA := &mockExchange{
-		name:       "exchangeA",
-		currencies: []ccxt.Currency{newCurrency("BTC"), newCurrency("ETH")},
+	testExchangeA := &TestExchange{
+		Name:       "exchangeA",
+		Currencies: []ccxt.Currency{newMockCurrency("BTC"), newMockCurrency("ETH")},
 	}
-
-	exchangeB := &mockExchange{
-		name:       "exchangeB",
-		currencies: []ccxt.Currency{newCurrency("LTC"), newCurrency("ADA")},
+	testExchangeB := &TestExchange{
+		Name:       "exchangeB",
+		Currencies: []ccxt.Currency{newMockCurrency("LTC"), newMockCurrency("ADA")},
 	}
-
-	activeTrue, inactiveFalse := true, false
-	idDoge, idSol, idDot := "DOGE", "SOL", "DOT"
-
-	exchangeCWithInvalid := &mockExchange{
-		name: "exchangeC",
-		currencies: []ccxt.Currency{
-			newCurrency("XRP"), // This one is valid
-			{Id: &idDoge, Active: &inactiveFalse, Deposit: &activeTrue, Withdraw: &activeTrue}, // Inactive
-			{Id: &idSol, Active: &activeTrue, Deposit: &inactiveFalse, Withdraw: &activeTrue},  // Deposit disabled
-			{Id: &idDot, Active: &activeTrue, Deposit: &activeTrue, Withdraw: &inactiveFalse},  // Withdraw disabled
-			{Id: nil, Active: &activeTrue, Deposit: &activeTrue, Withdraw: &activeTrue},        // Nil ID
+	testExchangeCWithInvalid := &TestExchange{
+		Name: "exchangeC",
+		Currencies: []ccxt.Currency{
+			newMockCurrency("XRP"),
+			{Id: newString("DOGE"), Active: newBool(false)},
+			{Id: newString("SOL"), Deposit: newBool(false)},
+			{Id: newString("DOT"), Withdraw: newBool(false)},
+			{Id: nil},
 		},
 	}
 
-	tests := []struct {
-		name        string
-		currencies  []string
-		clientsPtr  *models.Clients
-		wantErr     bool
-		errContains string // For checking the error message content
+	testCases := []struct {
+		name            string
+		testCurrencies  []string
+		testClients     *models.Clients
+		wantErr         bool
+		wantErrContains string
 	}{
 		{
-			name:       "valid currencies across multiple exchanges",
-			currencies: []string{"BTC", "LTC"},
-			clientsPtr: &models.Clients{exchangeA.name: exchangeA, exchangeB.name: exchangeB},
-			wantErr:    false,
+			name:           "valid currencies across multiple exchanges",
+			testCurrencies: []string{"BTC", "LTC"},
+			testClients:    &models.Clients{testExchangeA.Name: testExchangeA, testExchangeB.Name: testExchangeB},
+			wantErr:        false,
 		},
 		{
-			name:        "multiple currencies are invalid",
-			currencies:  []string{"BTC", "unsupported1", "unsupported2"},
-			clientsPtr:  &models.Clients{exchangeA.name: exchangeA},
-			wantErr:     true,
-			errContains: "invalid currencies: unsupported1, unsupported2",
+			name:            "multiple currencies are invalid",
+			testCurrencies:  []string{"BTC", "unsupported1", "unsupported2"},
+			testClients:     &models.Clients{testExchangeA.Name: testExchangeA},
+			wantErr:         true,
+			wantErrContains: "invalid currencies: unsupported1, unsupported2",
 		},
 		{
-			name:        "empty list of currencies to check",
-			currencies:  []string{},
-			clientsPtr:  &models.Clients{exchangeA.name: exchangeA},
-			wantErr:     true,
-			errContains: "list of currencies is empty",
+			name:            "empty list of currencies to check",
+			testCurrencies:  []string{},
+			testClients:     &models.Clients{testExchangeA.Name: testExchangeA},
+			wantErr:         true,
+			wantErrContains: "list of currencies is empty",
 		},
 		{
-			name:        "empty clients list",
-			currencies:  []string{"BTC"},
-			clientsPtr:  &models.Clients{},
-			wantErr:     true,
-			errContains: "list of clients is empty",
+			name:            "empty clients list",
+			testCurrencies:  []string{"BTC"},
+			testClients:     &models.Clients{},
+			wantErr:         true,
+			wantErrContains: "list of clients is empty",
 		},
 		{
-			name:        "currency exists but is inactive",
-			currencies:  []string{"DOGE"},
-			clientsPtr:  &models.Clients{exchangeCWithInvalid.name: exchangeCWithInvalid},
-			wantErr:     true,
-			errContains: "invalid currencies: DOGE",
+			name:            "currency exists but is inactive",
+			testCurrencies:  []string{"DOGE"},
+			testClients:     &models.Clients{testExchangeCWithInvalid.Name: testExchangeCWithInvalid},
+			wantErr:         true,
+			wantErrContains: "invalid currencies: DOGE",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateCurrencies(tt.currencies, tt.clientsPtr)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateCurrencies(tc.testCurrencies, tc.testClients)
 
-			if !tt.wantErr && err != nil {
-				t.Errorf("validateCurrencies() error = %v, wantErr %v", err, tt.wantErr)
+			if (err != nil) != tc.wantErr {
+				t.Errorf("validateCurrencies() error = %v, wantErr %v", err, tc.wantErr)
 				return
 			}
-			if tt.wantErr && err == nil {
-				t.Errorf("validateCurrencies() error = nil, wantErr %v", tt.wantErr)
-				return
-			}
-			if tt.wantErr && err != nil {
-				if !strings.Contains(err.Error(), tt.errContains) {
-					t.Errorf("validateCurrencies() error = %q, want error to contain %q", err.Error(), tt.errContains)
+			if tc.wantErr && err != nil {
+				if !strings.Contains(err.Error(), tc.wantErrContains) {
+					t.Errorf("validateCurrencies() error = %q, want error to contain %q", err.Error(), tc.wantErrContains)
 				}
 			}
 		})
@@ -202,104 +176,79 @@ func TestValidateCurrencies(t *testing.T) {
 }
 
 func TestCreateData(t *testing.T) {
-	exchangeA := &mockExchange{
-		name: "exchangeA",
-		currencies: []ccxt.Currency{
-			newCurrency("BTC"),
-			newCurrency("ETH"),
-			newCurrency("USDT"),
-			// Inactive currency
+	testExchangeA := &TestExchange{
+		Name: "exchangeA",
+		Currencies: []ccxt.Currency{
+			newMockCurrency("BTC"),
+			newMockCurrency("ETH"),
+			newMockCurrency("USDT"),
 			func() ccxt.Currency {
 				id, active := "XRP", false
 				return ccxt.Currency{Id: &id, Active: &active}
 			}(),
 		},
-		markets: []ccxt.MarketInterface{
-			// Valid market
-			newMarket("BTC/USDT", "BTC", "USDT", true, true),
-			// Market with a currency not in the input set
-			newMarket("ETH/DAI", "ETH", "DAI", true, true),
-			// Inactive market
-			newMarket("XRP/USDT", "XRP", "USDT", false, true),
-			// Non-spot market
-			newMarket("LTC/USDT", "LTC", "USDT", true, false),
+		Markets: []ccxt.MarketInterface{
+			newMockMarket("BTC/USDT", "BTC", "USDT", true, true),
+			newMockMarket("ETH/DAI", "ETH", "DAI", true, true),
+			newMockMarket("XRP/USDT", "XRP", "USDT", false, true),
+			newMockMarket("LTC/USDT", "LTC", "USDT", true, false),
+		},
+	}
+	testExchangeB := &TestExchange{
+		Name: "exchangeB",
+		Currencies: []ccxt.Currency{
+			newMockCurrency("BTC"),
+			newMockCurrency("USDT"),
+			newMockCurrency("ADA"),
+		},
+		Markets: []ccxt.MarketInterface{
+			newMockMarket("BTC/USDT", "BTC", "USDT", true, true),
+			newMockMarket("ADA/USDT", "ADA", "USDT", true, true),
 		},
 	}
 
-	exchangeB := &mockExchange{
-		name: "exchangeB",
-		currencies: []ccxt.Currency{
-			newCurrency("BTC"),
-			newCurrency("USDT"),
-			newCurrency("ADA"),
-		},
-		markets: []ccxt.MarketInterface{
-			newMarket("BTC/USDT", "BTC", "USDT", true, true),
-			newMarket("ADA/USDT", "ADA", "USDT", true, true),
-		},
-	}
-
-	tests := []struct {
-		name       string
-		currencies []string
-		clientsPtr *models.Clients
-		want       models.Exchanges
+	testCases := []struct {
+		name           string
+		testCurrencies []string
+		testClients    *models.Clients
+		want           models.Exchanges
 	}{
 		{
-			name:       "Processes two exchanges concurrently",
-			currencies: []string{"BTC", "USDT", "ADA"},
-			clientsPtr: &models.Clients{
-				"exchangeA": exchangeA,
-				"exchangeB": exchangeB,
-			},
+			name:           "processes two exchanges concurrently",
+			testCurrencies: []string{"BTC", "USDT", "ADA"},
+			testClients:    &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id: "exchangeA",
-					// Changed to a map
-					Markets: map[string]models.Market{
-						"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
-					},
-					Currencies: map[string]models.Currency{
-						"BTC":  {Id: "BTC"},
-						"USDT": {Id: "USDT"},
-						"ADA":  {Id: "ADA"},
-					},
+					Id:         "exchangeA",
+					Markets:    map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}, "ADA": {Id: "ADA"}},
 				},
 				"exchangeB": {
-					Id: "exchangeB",
-					// Changed to a map
-					Markets: map[string]models.Market{
-						"ADA/USDT": {Id: "ADA/USDT", Base: "ADA", Quote: "USDT"},
-						"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"},
-					},
-					Currencies: map[string]models.Currency{
-						"BTC":  {Id: "BTC"},
-						"USDT": {Id: "USDT"},
-						"ADA":  {Id: "ADA"},
-					},
+					Id:         "exchangeB",
+					Markets:    map[string]models.Market{"ADA/USDT": {Id: "ADA/USDT", Base: "ADA", Quote: "USDT"}, "BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}, "ADA": {Id: "ADA"}},
 				},
 			},
 		},
 		{
-			name:       "Handles no clients",
-			currencies: []string{"BTC", "USDT"},
-			clientsPtr: &models.Clients{},
-			want:       models.Exchanges{},
+			name:           "handles no clients",
+			testCurrencies: []string{"BTC", "USDT"},
+			testClients:    &models.Clients{},
+			want:           models.Exchanges{},
 		},
 		{
-			name:       "Handles nil clients pointer",
-			currencies: []string{"BTC", "USDT"},
-			clientsPtr: nil,
-			want:       models.Exchanges{},
+			name:           "handles nil clients pointer",
+			testCurrencies: []string{"BTC", "USDT"},
+			testClients:    nil,
+			want:           models.Exchanges{},
 		},
 		{
-			name:       "Handles no input currencies",
-			currencies: []string{},
-			clientsPtr: &models.Clients{"exchangeA": exchangeA},
+			name:           "handles no input currencies",
+			testCurrencies: []string{},
+			testClients:    &models.Clients{"exchangeA": testExchangeA},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id: "exchangeA",
-					// Changed to an empty map
+					Id:         "exchangeA",
 					Markets:    map[string]models.Market{},
 					Currencies: map[string]models.Currency{},
 				},
@@ -307,12 +256,11 @@ func TestCreateData(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := createExchanges(tt.currencies, tt.clientsPtr)
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("createData() = %+v, want %+v", got, tt.want)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := createExchanges(tc.testCurrencies, tc.testClients)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("createData() = %+v, want %+v", got, tc.want)
 			}
 		})
 	}

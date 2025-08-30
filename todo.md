@@ -2,7 +2,6 @@
 - client
   - ...
 - data
-  - [ ] make tests more consistent
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
 - arbitrage
