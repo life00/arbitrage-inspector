@@ -216,8 +216,8 @@ func createExchange(
 		Currencies: make(map[string]models.Currency),
 	}
 
-	exchange.Markets = createMarkets(clientPtr, currencySet)
 	exchange.Currencies = createCurrencies(clientPtr, currencySet)
+	exchange.Markets = createMarkets(clientPtr, exchange.Currencies)
 
 	mu.Lock()
 	exchanges[exchange.Id] = exchange
@@ -225,7 +225,7 @@ func createExchange(
 }
 
 // createMarkets gets initial data and creates a Markets object.
-func createMarkets(clientPtr *ccxt.IExchange, currencySet map[string]struct{}) map[string]models.Market {
+func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Currency) map[string]models.Market {
 	client := *clientPtr
 
 	markets := make(map[string]models.Market)
@@ -241,9 +241,9 @@ func createMarkets(clientPtr *ccxt.IExchange, currencySet map[string]struct{}) m
 			quoteId := strings.ToUpper(*m.QuoteId)
 			symbol := strings.ToUpper(*m.Symbol)
 
-			// check if both base and quote currencies are in the input set
-			if _, baseExists := currencySet[baseId]; baseExists {
-				if _, quoteExists := currencySet[quoteId]; quoteExists {
+			// check if both base and quote currencies are in the currency data structure
+			if _, baseExists := currencies[baseId]; baseExists {
+				if _, quoteExists := currencies[quoteId]; quoteExists {
 					markets[symbol] = models.Market{
 						Id:    symbol,
 						Base:  baseId,
@@ -261,11 +261,6 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencySet map[string]struct{}
 	client := *clientPtr
 
 	currenciesMap := make(map[string]models.Currency)
-
-	// all currencies to the map
-	for cur := range currencySet {
-		currenciesMap[cur] = models.Currency{Id: cur}
-	}
 
 	// iterate through the clients currency list and add any that meet the criteria
 	currenciesList := client.GetCurrenciesList()

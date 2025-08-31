@@ -221,7 +221,7 @@ func TestCreateData(t *testing.T) {
 				"exchangeA": {
 					Id:         "exchangeA",
 					Markets:    map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}, "ADA": {Id: "ADA"}},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}},
 				},
 				"exchangeB": {
 					Id:         "exchangeB",
@@ -260,7 +260,7 @@ func TestCreateData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got := createExchanges(tc.testCurrencies, tc.testClients)
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("createData() = %+v, want %+v", got, tc.want)
+				t.Errorf("createExchanges() = %+v, want %+v", got, tc.want)
 			}
 		})
 	}
