@@ -10,6 +10,7 @@ import (
 )
 
 func validateInput(exchanges []string, currencies []string) (models.Clients, error) {
+	slog.Info("validating inputs...")
 	slog.Debug("validating exchanges...")
 	err := validateExchanges(exchanges)
 	if err != nil {
@@ -35,6 +36,7 @@ func createExchanges(currencies []string, clientsPtr *models.Clients) models.Exc
 	if clientsPtr == nil || len(*clientsPtr) == 0 {
 		return models.Exchanges{}
 	}
+	slog.Info("creating data structure...")
 
 	currencySet := make(map[string]struct{})
 	for _, c := range currencies {
@@ -55,13 +57,12 @@ func createExchanges(currencies []string, clientsPtr *models.Clients) models.Exc
 }
 
 func InitializeExchanges(inputExchanges []string, inputCurrencies []string) (models.Exchanges, models.Clients, error) {
-	slog.Info("validating inputs...")
+	slog.Info("initializing data...")
 	clients, err := validateInput(inputExchanges, inputCurrencies)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	slog.Info("creating data structure...")
 	exchanges := createExchanges(inputCurrencies, &clients)
 
 	return exchanges, clients, nil
@@ -82,6 +83,7 @@ func UpdateExchanges(
 	if len(*clientsPtr) != len(*exchangesPtr) {
 		return fmt.Errorf("length of clients and exchange data is not matching")
 	}
+	slog.Info("updating exchange data...")
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -108,6 +110,8 @@ func UpdateExchanges(
 	if len(errors) > 0 {
 		return fmt.Errorf("exchange data update failed with %d error(s):\n- %s", len(errors), strings.Join(errors, "\n- "))
 	}
+
+	slog.Info("successfully updated exchange data")
 
 	return nil
 }
