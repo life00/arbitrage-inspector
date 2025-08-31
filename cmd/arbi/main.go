@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"os"
 
+	// "github.com/govalues/decimal"
 	"github.com/joho/godotenv"
+	// "github.com/life00/arbitrage-inspector/internal/arbitrage"
 	"github.com/life00/arbitrage-inspector/internal/data"
 	// "github.com/life00/arbitrage-inspector/internal/models"
 )
@@ -27,6 +29,7 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		slog.Error("failed to load .env file")
+		os.Exit(1)
 	}
 
 	// TODO: Parse cli arguments and define inputs
@@ -35,6 +38,7 @@ func main() {
 		"kucoin",
 		"bitget",
 		// "htx",
+		// "coinbase",
 	}
 	inputCurrencies := []string{
 		"BTC",
@@ -48,11 +52,8 @@ func main() {
 		"LTC",
 	}
 
-	// TODO: Define data structures
-
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
-	slog.Info("initializing data...")
 	exchanges, clients, err := data.InitializeExchanges(inputExchanges, inputCurrencies)
 	if err != nil {
 		fmt.Println(err)
@@ -61,20 +62,30 @@ func main() {
 
 	// 1.2. Fetching price data and fees
 
-	slog.Info("updating exchange data...")
 	err = data.UpdateExchanges(&exchanges, &clients, true, true)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	slog.Info("successfully updated exchange data")
 
-	fmt.Println(exchanges, clients)
+	err = saveExchanges(exchanges, "exchanges.json")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	// 2. Arbitrage identification using arbitrage.go
-	// 2.1. Graph creation
+	// 2.1. Transforming data
 
-	// graph, err := arbitrage.InitializeGraph(data)
+	// capital, err := decimal.NewFromFloat64(100)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+	//
+	// assets, pairs := arbitrage.GenerateAssetPairs(&exchanges, capital)
+	//
+	// fmt.Println(pairs, assets)
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 
