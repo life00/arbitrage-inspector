@@ -33,3 +33,31 @@ type Market struct {
 	MakerFee  decimal.Decimal
 	Timestamp time.Time
 }
+
+type Asset struct {
+	Exchange string
+	Currency string
+	Index    uint
+}
+
+type AssetKey struct {
+	Exchange string
+	Currency string
+}
+
+type Assets map[AssetKey]Asset
+
+type Pair struct {
+	Symbol string
+	From   Asset
+	To     Asset
+	Weight decimal.Decimal
+	Side   string
+}
+
+type PairKey struct {
+	From AssetKey
+	To   AssetKey
+}
+
+type Pairs map[PairKey]Pair
