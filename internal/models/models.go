@@ -17,10 +17,14 @@ type Exchange struct {
 	Markets    map[string]Market
 }
 
-type Currency struct {
+type CurrencyNetwork struct {
 	Id            string
 	WithdrawalFee decimal.Decimal
-	Network       string
+}
+
+type Currency struct {
+	Id       string
+	Networks map[string]CurrencyNetwork
 }
 
 type Market struct {

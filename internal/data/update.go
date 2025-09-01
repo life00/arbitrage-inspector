@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"sync"
 	"time"
 
@@ -112,7 +111,7 @@ func updatePrices(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
 	return nil
 }
 
-// updateCurrencies fetches currency data to update withdrawal fees
+// updateCurrencies fetches currency data to update withdrawal fees and network details
 func updateCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
 	client := *clientPtr
 	apiCurrencies, err := client.FetchCurrencies()
@@ -125,29 +124,27 @@ func updateCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) erro
 
 	for id, currency := range exchange.Currencies {
 		if apiCurrency, ok := apiCurrencies.Currencies[id]; ok {
-			minFee := math.MaxFloat64
-			var bestFee *float64
-			var bestNetwork string
 
-			if len(apiCurrency.Networks) > 0 {
-				for name, network := range apiCurrency.Networks {
-					if network.Active != nil && *network.Active && network.Withdraw != nil && *network.Withdraw &&
-						network.Deposit != nil && *network.Deposit && network.Fee != nil && *network.Fee < minFee {
-						minFee = *network.Fee
-						bestFee = network.Fee
-						bestNetwork = name
+			currency.Networks = make(map[string]models.CurrencyNetwork)
+
+			for name, network := range apiCurrency.Networks {
+				if network.Active != nil && *network.Active && network.Withdraw != nil && *network.Withdraw &&
+					network.Deposit != nil && *network.Deposit && network.Fee != nil {
+
+					fee, err := decimal.NewFromFloat64(*network.Fee)
+					if err != nil {
+						slog.Warn(fmt.Sprintf("invalid fee for currency %s on network %s: %v", id, name, err))
+						continue // Skip this network if fee is invalid
+					}
+					currency.Networks[name] = models.CurrencyNetwork{
+						Id:            name,
+						WithdrawalFee: fee,
 					}
 				}
 			}
 
-			if bestFee != nil {
-				var err error
-				if currency.WithdrawalFee, err = decimal.NewFromFloat64(*bestFee); err != nil {
-					return fmt.Errorf("invalid fee for currency %s on network %s: %w", id, bestNetwork, err)
-				}
-				currency.Network = bestNetwork
-				exchange.Currencies[id] = currency
-			}
+			currency.Id = id
+			exchange.Currencies[id] = currency
 		}
 	}
 	return nil
