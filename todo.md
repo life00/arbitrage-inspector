@@ -2,8 +2,7 @@
 - client
   - ...
 - data
-  - [ ] evaluate current performance bottlenecks
-  - [ ] refactor pretty much everything for efficient updates of currency Pairs data structure
+  - [ ] refactor code to reduce data manipulation during price updates; update CurrencyPairs data directly, somehow
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
 - arbitrage
