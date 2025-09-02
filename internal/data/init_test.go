@@ -108,10 +108,10 @@ func TestValidateCurrencies(t *testing.T) {
 		Name: "exchangeC",
 		Currencies: []ccxt.Currency{
 			newMockCurrency("XRP"),
-			{Id: newString("DOGE"), Active: newBool(false)},
-			{Id: newString("SOL"), Deposit: newBool(false)},
-			{Id: newString("DOT"), Withdraw: newBool(false)},
-			{Id: nil},
+			{Code: newString("DOGE"), Active: newBool(false)},
+			{Code: newString("SOL"), Deposit: newBool(false)},
+			{Code: newString("DOT"), Withdraw: newBool(false)},
+			{Code: nil},
 		},
 	}
 

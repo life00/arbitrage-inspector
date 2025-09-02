@@ -68,12 +68,12 @@ func (m *TestExchange) FetchTickers(options ...ccxt.FetchTickersOptions) (ccxt.T
 	return m.Tickers, nil
 }
 
-func newMockCurrency(id string) ccxt.Currency {
+func newMockCurrency(code string) ccxt.Currency {
 	active := true
 	deposit := true
 	withdraw := true
 	return ccxt.Currency{
-		Id:       &id,
+		Code:     &code,
 		Active:   &active,
 		Deposit:  &deposit,
 		Withdraw: &withdraw,

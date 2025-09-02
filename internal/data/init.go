@@ -180,10 +180,10 @@ func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 
 	for _, e := range clients {
 		for _, c := range e.GetCurrenciesList() {
-			if c.Active == nil || !*c.Active || c.Deposit == nil || !*c.Deposit || c.Withdraw == nil || !*c.Withdraw || c.Id == nil {
+			if c.Active == nil || !*c.Active || c.Deposit == nil || !*c.Deposit || c.Withdraw == nil || !*c.Withdraw || c.Code == nil {
 				continue
 			}
-			validCurrencies = append(validCurrencies, *c.Id)
+			validCurrencies = append(validCurrencies, *c.Code)
 		}
 	}
 
@@ -264,14 +264,14 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencySet map[string]struct{}
 
 	// iterate through the clients currency list and add any that meet the criteria
 	currenciesList := client.GetCurrenciesList()
-	for _, cur := range currenciesList {
+	for _, c := range currenciesList {
 		// check all currency conditions
-		if cur.Active != nil && *cur.Active &&
-			cur.Deposit != nil && *cur.Deposit &&
-			cur.Withdraw != nil && *cur.Withdraw &&
-			cur.Id != nil {
+		if c.Active != nil && *c.Active &&
+			c.Deposit != nil && *c.Deposit &&
+			c.Withdraw != nil && *c.Withdraw &&
+			c.Code != nil {
 
-			currencyId := *cur.Id
+			currencyId := *c.Code
 			if _, exists := currencySet[currencyId]; exists {
 				currenciesMap[currencyId] = models.Currency{Id: currencyId}
 			}
