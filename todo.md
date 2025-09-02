@@ -3,7 +3,6 @@
   - ...
 - data
   - [ ] evaluate current performance bottlenecks
-  - [ ] connect kraken exchange
   - [ ] refactor pretty much everything for efficient updates of currency Pairs data structure
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
