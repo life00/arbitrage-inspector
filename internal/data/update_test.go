@@ -8,7 +8,7 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func TestUpdateData(t *testing.T) {
+func TestUpdateExchange(t *testing.T) {
 	testCases := []struct {
 		name            string
 		testExchanges   models.Exchanges

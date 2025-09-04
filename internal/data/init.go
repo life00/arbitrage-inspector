@@ -176,6 +176,7 @@ func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 
 	clients := *clientsPtr
 
+	// TODO: maybe instead of creating validCurrencies array, it might be better to check each currency directly?
 	var validCurrencies []string
 
 	for _, e := range clients {
@@ -232,6 +233,8 @@ func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Curre
 	marketsList := client.GetMarketsList()
 
 	for _, m := range marketsList {
+		// TODO: first check if both base and quote currencies exist before checking for conditions
+
 		// check all market conditions
 		if m.Active != nil && *m.Active &&
 			m.Spot != nil && *m.Spot &&
@@ -261,6 +264,8 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencySet map[string]struct{}
 	client := *clientPtr
 
 	currenciesMap := make(map[string]models.Currency)
+
+	// TODO: loop through currencySet instead of currenciesList
 
 	// iterate through the clients currency list and add any that meet the criteria
 	currenciesList := client.GetCurrenciesList()
