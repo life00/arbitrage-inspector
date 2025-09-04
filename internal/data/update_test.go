@@ -169,7 +169,8 @@ func TestUpdatePrices(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{Tickers: tc.mockTickers}
 			var clientPtr ccxt.IExchange = mockClient
-			err := updatePrices(&clientPtr, tc.initial)
+			var exchangeMu sync.Mutex
+			err := updatePrices(&clientPtr, tc.initial, &exchangeMu)
 
 			if (err != nil) != tc.wantErr {
 				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)
@@ -228,7 +229,8 @@ func TestUpdateCurrencies(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{APICurrencies: tc.mockCurrencies}
 			var clientPtr ccxt.IExchange = mockClient
-			err := updateCurrencies(&clientPtr, tc.initial)
+			var exchangeMu sync.Mutex
+			err := updateCurrencies(&clientPtr, tc.initial, &exchangeMu)
 
 			if (err != nil) != tc.wantErr {
 				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)
@@ -274,7 +276,8 @@ func TestUpdateMarkets(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{Markets: tc.mockMarkets}
 			var clientPtr ccxt.IExchange = mockClient
-			err := updateMarkets(&clientPtr, tc.initial)
+			var exchangeMu sync.Mutex
+			err := updateMarkets(&clientPtr, tc.initial, &exchangeMu)
 
 			if (err != nil) != tc.wantErr {
 				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)

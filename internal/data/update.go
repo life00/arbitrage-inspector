@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"sync"
 	"time"
 
@@ -33,6 +34,8 @@ func updateExchange(
 	slog.Debug(fmt.Sprintf("updating exchange data for %s...", exchangeId))
 
 	var wg sync.WaitGroup
+	var exchangeMu sync.Mutex
+
 	errChan := make(chan error, 3)
 
 	runTask := func(task func() error) {
@@ -46,18 +49,18 @@ func updateExchange(
 	}
 
 	runTask(func() error {
-		return updatePrices(clientPtr, &exchange)
+		return updatePrices(clientPtr, &exchange, &exchangeMu)
 	})
 
 	if updateCurrencyFees {
 		runTask(func() error {
-			return updateCurrencies(clientPtr, &exchange)
+			return updateCurrencies(clientPtr, &exchange, &exchangeMu)
 		})
 	}
 
 	if updateMarketFees {
 		runTask(func() error {
-			return updateMarkets(clientPtr, &exchange)
+			return updateMarkets(clientPtr, &exchange, &exchangeMu)
 		})
 	}
 
@@ -80,8 +83,14 @@ func updateExchange(
 }
 
 // updateCurrencies fetches price data to update conversion prices
-func updatePrices(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
+func updatePrices(clientPtr *ccxt.IExchange, exchange *models.Exchange, exchangeMu *sync.Mutex) error {
 	client := *clientPtr
+
+	exchangeMu.Lock()
+	markets := make(map[string]models.Market, len(exchange.Markets))
+	maps.Copy(markets, exchange.Markets)
+	exchangeMu.Unlock()
+
 	tickers, err := client.FetchTickers()
 	if err != nil {
 		return fmt.Errorf("API call failed: %w", err)
@@ -90,30 +99,41 @@ func updatePrices(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
 		return nil
 	}
 
-	for symbol, ticker := range tickers.Tickers {
-		if market, ok := exchange.Markets[symbol]; ok {
+	for id, market := range markets {
+		if ticker, ok := tickers.Tickers[id]; ok {
 			if ticker.Bid != nil {
 				if market.Bid, err = decimal.NewFromFloat64(*ticker.Bid); err != nil {
-					return fmt.Errorf("invalid bid value for %s: %w", symbol, err)
+					return fmt.Errorf("invalid bid value for %s: %w", id, err)
 				}
 			}
 			if ticker.Ask != nil {
 				if market.Ask, err = decimal.NewFromFloat64(*ticker.Ask); err != nil {
-					return fmt.Errorf("invalid ask value for %s: %w", symbol, err)
+					return fmt.Errorf("invalid ask value for %s: %w", id, err)
 				}
 			}
 			if ticker.Timestamp != nil {
 				market.Timestamp = time.UnixMilli(*ticker.Timestamp)
 			}
-			exchange.Markets[symbol] = market
+			markets[id] = market
 		}
 	}
+
+	exchangeMu.Lock()
+	exchange.Markets = markets
+	exchangeMu.Unlock()
+
 	return nil
 }
 
 // updateCurrencies fetches currency data to update withdrawal fees and network details
-func updateCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
+func updateCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange, exchangeMu *sync.Mutex) error {
 	client := *clientPtr
+
+	exchangeMu.Lock()
+	currencies := make(map[string]models.Currency, len(exchange.Currencies))
+	maps.Copy(currencies, exchange.Currencies)
+	exchangeMu.Unlock()
+
 	apiCurrencies, err := client.FetchCurrencies()
 	if err != nil {
 		return fmt.Errorf("API call failed: %w", err)
@@ -122,7 +142,7 @@ func updateCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) erro
 		return nil
 	}
 
-	for id, currency := range exchange.Currencies {
+	for id, currency := range currencies {
 		if apiCurrency, ok := apiCurrencies.Currencies[id]; ok {
 
 			currency.Networks = make(map[string]models.CurrencyNetwork)
@@ -144,15 +164,26 @@ func updateCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) erro
 			}
 
 			currency.Id = id
-			exchange.Currencies[id] = currency
+			currencies[id] = currency
 		}
 	}
+
+	exchangeMu.Lock()
+	exchange.Currencies = currencies
+	exchangeMu.Unlock()
+
 	return nil
 }
 
 // updateMarkets fetches market data to update taker and maker fees
-func updateMarkets(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
+func updateMarkets(clientPtr *ccxt.IExchange, exchange *models.Exchange, exchangeMu *sync.Mutex) error {
 	client := *clientPtr
+
+	exchangeMu.Lock()
+	markets := make(map[string]models.Market, len(exchange.Markets))
+	maps.Copy(markets, exchange.Markets)
+	exchangeMu.Unlock()
+
 	apiMarkets, err := client.FetchMarkets()
 	if err != nil {
 		return fmt.Errorf("API call failed: %w", err)
@@ -165,23 +196,28 @@ func updateMarkets(clientPtr *ccxt.IExchange, exchange *models.Exchange) error {
 		}
 	}
 
-	for symbol, market := range exchange.Markets {
-		if apiMarket, ok := apiMarketsMap[symbol]; ok {
+	for id, market := range markets {
+		if apiMarket, ok := apiMarketsMap[id]; ok {
 			if apiMarket.Taker != nil {
 				var err error
 				if market.TakerFee, err = decimal.NewFromFloat64(*apiMarket.Taker); err != nil {
-					return fmt.Errorf("invalid taker fee for %s: %w", symbol, err)
+					return fmt.Errorf("invalid taker fee for %s: %w", id, err)
 				}
 			}
 
 			if apiMarket.Maker != nil {
 				var err error
 				if market.MakerFee, err = decimal.NewFromFloat64(*apiMarket.Maker); err != nil {
-					return fmt.Errorf("invalid maker fee for %s: %w", symbol, err)
+					return fmt.Errorf("invalid maker fee for %s: %w", id, err)
 				}
 			}
-			exchange.Markets[symbol] = market
+			markets[id] = market
 		}
 	}
+
+	exchangeMu.Lock()
+	exchange.Markets = markets
+	exchangeMu.Unlock()
+
 	return nil
 }
