@@ -1,21 +1,26 @@
 package data
 
 import (
+	"math"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/ccxt/ccxt/go/v4"
+	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func TestUpdateExchange(t *testing.T) {
 	testCases := []struct {
-		name            string
-		testExchanges   models.Exchanges
-		mockClient      *TestExchange
-		updateFees      bool
-		wantErr         bool
-		wantErrContains string
+		name               string
+		testExchanges      models.Exchanges
+		mockClient         *TestExchange
+		updateCurrencyFees bool
+		updateMarketFees   bool
+		wantErr            bool
+		wantErrContains    string
 	}{
 		{
 			name: "successful full update",
@@ -52,12 +57,12 @@ func TestUpdateExchange(t *testing.T) {
 					},
 				},
 				Markets: []ccxt.MarketInterface{
-					{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001)},
+					{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001), Maker: newFloat64(0.0005)},
 				},
 			},
-			updateFees:      true,
-			wantErr:         false,
-			wantErrContains: "",
+			updateCurrencyFees: true,
+			updateMarketFees:   true,
+			wantErr:            false,
 		},
 		{
 			name: "update prices only",
@@ -75,19 +80,20 @@ func TestUpdateExchange(t *testing.T) {
 					},
 				},
 			},
-			updateFees:      false,
-			wantErr:         false,
-			wantErrContains: "",
+			updateCurrencyFees: false,
+			updateMarketFees:   false,
+			wantErr:            false,
 		},
 		{
 			name: "exchange not found",
 			testExchanges: models.Exchanges{
 				"anotherExchange": {Id: "anotherExchange"},
 			},
-			mockClient:      &TestExchange{Name: "testExchange"},
-			updateFees:      true,
-			wantErr:         true,
-			wantErrContains: "exchange not found in data structure",
+			mockClient:         &TestExchange{Name: "testExchange"},
+			updateCurrencyFees: true,
+			updateMarketFees:   true,
+			wantErr:            true,
+			wantErrContains:    "exchange not found in data structure",
 		},
 		{
 			name: "error in price update",
@@ -103,9 +109,48 @@ func TestUpdateExchange(t *testing.T) {
 				Name:              "testExchange",
 				FetchTickersError: newMockError("something went wrong"),
 			},
-			updateFees:      true,
-			wantErr:         true,
-			wantErrContains: "API call failed: something went wrong",
+			updateCurrencyFees: true,
+			updateMarketFees:   true,
+			wantErr:            true,
+			wantErrContains:    "API call failed: something went wrong",
+		},
+		{
+			name: "error in currency fees update",
+			testExchanges: models.Exchanges{
+				"testExchange": {
+					Id: "testExchange",
+					Currencies: map[string]models.Currency{
+						"BTC": {},
+					},
+				},
+			},
+			mockClient: &TestExchange{
+				Name:                 "testExchange",
+				FetchCurrenciesError: newMockError("currency fetch failed"),
+			},
+			updateCurrencyFees: true,
+			updateMarketFees:   false,
+			wantErr:            true,
+			wantErrContains:    "API call failed: currency fetch failed",
+		},
+		{
+			name: "error in market fees update",
+			testExchanges: models.Exchanges{
+				"testExchange": {
+					Id: "testExchange",
+					Markets: map[string]models.Market{
+						"BTC/USDT": {},
+					},
+				},
+			},
+			mockClient: &TestExchange{
+				Name:              "testExchange",
+				FetchMarketsError: newMockError("market fetch failed"),
+			},
+			updateCurrencyFees: false,
+			updateMarketFees:   true,
+			wantErr:            true,
+			wantErrContains:    "API call failed: market fetch failed",
 		},
 	}
 
@@ -115,31 +160,33 @@ func TestUpdateExchange(t *testing.T) {
 			exchanges := &tc.testExchanges
 			var clientPtr ccxt.IExchange = tc.mockClient
 
-			err := updateExchange(&clientPtr, mu, exchanges, tc.updateFees, tc.updateFees)
+			err := updateExchange(&clientPtr, mu, exchanges, tc.updateCurrencyFees, tc.updateMarketFees)
 
 			if (err != nil) != tc.wantErr {
-				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)
+				t.Errorf("updateExchange() error = %v, wantErr %v", err, tc.wantErr)
 				return
 			}
 			if tc.wantErr && err != nil {
-				if err.Error() != tc.wantErrContains {
-					t.Errorf("Expected error content: '%s', got: '%s'", tc.wantErrContains, err.Error())
+				if !strings.Contains(err.Error(), tc.wantErrContains) {
+					t.Errorf("updateExchange() error = %q, want error containing %q", err.Error(), tc.wantErrContains)
 				}
 			}
 		})
 	}
 }
 
-func TestUpdatePrices(t *testing.T) {
+// ---
+
+func TestFetchPrices(t *testing.T) {
 	testCases := []struct {
 		name        string
-		initial     *models.Exchange
+		exchange    *models.Exchange
 		mockTickers ccxt.Tickers
 		wantErr     bool
 	}{
 		{
 			name: "successful update",
-			initial: &models.Exchange{
+			exchange: &models.Exchange{
 				Id: "testExchange",
 				Markets: map[string]models.Market{
 					"BTC/USDT": {Id: "BTC/USDT"},
@@ -156,12 +203,30 @@ func TestUpdatePrices(t *testing.T) {
 		},
 		{
 			name: "empty tickers",
-			initial: &models.Exchange{
+			exchange: &models.Exchange{
 				Id:      "testExchange",
 				Markets: map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT"}},
 			},
 			mockTickers: ccxt.Tickers{Tickers: map[string]ccxt.Ticker{}},
 			wantErr:     false,
+		},
+		{
+			name: "invalid bid value",
+			exchange: &models.Exchange{
+				Id: "testExchange",
+				Markets: map[string]models.Market{
+					"BTC/USDT": {},
+				},
+			},
+			mockTickers: ccxt.Tickers{
+				Tickers: map[string]ccxt.Ticker{
+					"BTC/USDT": {
+						Symbol: newString("BTC/USDT"),
+						Bid:    newFloat64(math.Inf(1)),
+					},
+				},
+			},
+			wantErr: true,
 		},
 	}
 
@@ -169,26 +234,48 @@ func TestUpdatePrices(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{Tickers: tc.mockTickers}
 			var clientPtr ccxt.IExchange = mockClient
-			var exchangeMu sync.Mutex
-			err := updatePrices(&clientPtr, tc.initial, &exchangeMu)
+			updatedPrices, err := fetchPrices(&clientPtr, tc.exchange)
 
 			if (err != nil) != tc.wantErr {
-				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)
+				t.Errorf("fetchPrices() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if !tc.wantErr && updatedPrices != nil {
+				// Assert that the returned map contains the correct data
+				if len(updatedPrices) != len(tc.mockTickers.Tickers) {
+					t.Errorf("fetchPrices() loaded %d prices, want %d", len(updatedPrices), len(tc.mockTickers.Tickers))
+				}
+				for id, ticker := range tc.mockTickers.Tickers {
+					if updated, ok := updatedPrices[id]; ok {
+						expectedBid, _ := decimal.NewFromFloat64(*ticker.Bid)
+						expectedAsk, _ := decimal.NewFromFloat64(*ticker.Ask)
+						if !updated.Bid.Equal(expectedBid) || !updated.Ask.Equal(expectedAsk) {
+							t.Errorf("Mismatch for %s. Expected bid: %v, ask: %v. Got bid: %v, ask: %v", id, expectedBid, expectedAsk, updated.Bid, updated.Ask)
+						}
+						expectedTimestamp := time.UnixMilli(*ticker.Timestamp)
+						if !updated.Timestamp.Equal(expectedTimestamp) {
+							t.Errorf("Mismatch for %s timestamp. Expected: %v, got: %v", id, expectedTimestamp, updated.Timestamp)
+						}
+					} else {
+						t.Errorf("Expected to find %s in updated prices", id)
+					}
+				}
 			}
 		})
 	}
 }
 
-func TestUpdateCurrencies(t *testing.T) {
+// ---
+
+func TestFetchCurrencies(t *testing.T) {
 	testCases := []struct {
 		name           string
-		initial        *models.Exchange
+		exchange       *models.Exchange
 		mockCurrencies ccxt.Currencies
 		wantErr        bool
 	}{
 		{
 			name: "successful update with best network",
-			initial: &models.Exchange{
+			exchange: &models.Exchange{
 				Id: "testExchange",
 				Currencies: map[string]models.Currency{
 					"BTC": {Id: "BTC"},
@@ -216,12 +303,30 @@ func TestUpdateCurrencies(t *testing.T) {
 		},
 		{
 			name: "empty currencies",
-			initial: &models.Exchange{
+			exchange: &models.Exchange{
 				Id:         "testExchange",
 				Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}},
 			},
 			mockCurrencies: ccxt.Currencies{Currencies: map[string]ccxt.Currency{}},
 			wantErr:        false,
+		},
+		{
+			name: "invalid fee value",
+			exchange: &models.Exchange{
+				Id:         "testExchange",
+				Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}},
+			},
+			mockCurrencies: ccxt.Currencies{
+				Currencies: map[string]ccxt.Currency{
+					"BTC": {
+						Id: newString("BTC"),
+						Networks: map[string]ccxt.Network{
+							"Bitcoin": {Active: newBool(true), Fee: newFloat64(math.Inf(1)), Deposit: newBool(true), Withdraw: newBool(true)},
+						},
+					},
+				},
+			},
+			wantErr: false,
 		},
 	}
 
@@ -229,26 +334,57 @@ func TestUpdateCurrencies(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{APICurrencies: tc.mockCurrencies}
 			var clientPtr ccxt.IExchange = mockClient
-			var exchangeMu sync.Mutex
-			err := updateCurrencies(&clientPtr, tc.initial, &exchangeMu)
+			updatedCurrencies, err := fetchCurrencies(&clientPtr, tc.exchange)
 
 			if (err != nil) != tc.wantErr {
-				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)
+				t.Errorf("fetchCurrencies() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if !tc.wantErr && updatedCurrencies != nil {
+				for id, mockCurrency := range tc.mockCurrencies.Currencies {
+					if updated, ok := updatedCurrencies[id]; ok {
+						expectedNetworks := 0
+						for _, network := range mockCurrency.Networks {
+							if *network.Fee != math.Inf(1) {
+								expectedNetworks++
+							}
+						}
+						if len(updated.Networks) != expectedNetworks {
+							t.Errorf("fetchCurrencies() loaded %d networks, want %d", len(updated.Networks), expectedNetworks)
+						}
+
+						for name, network := range mockCurrency.Networks {
+							if *network.Fee != math.Inf(1) {
+								if updatedNetwork, ok := updated.Networks[name]; ok {
+									expectedFee, _ := decimal.NewFromFloat64(*network.Fee)
+									if !updatedNetwork.WithdrawalFee.Equal(expectedFee) {
+										t.Errorf("Mismatch for network %s. Expected fee: %v, got: %v", name, expectedFee, updatedNetwork.WithdrawalFee)
+									}
+								} else {
+									t.Errorf("Expected to find network %s in updated currencies", name)
+								}
+							}
+						}
+					} else {
+						t.Errorf("Expected to find %s in updated currencies", id)
+					}
+				}
 			}
 		})
 	}
 }
 
-func TestUpdateMarkets(t *testing.T) {
+// ---
+
+func TestFetchMarkets(t *testing.T) {
 	testCases := []struct {
 		name        string
-		initial     *models.Exchange
+		exchange    *models.Exchange
 		mockMarkets []ccxt.MarketInterface
 		wantErr     bool
 	}{
 		{
 			name: "successful update",
-			initial: &models.Exchange{
+			exchange: &models.Exchange{
 				Id: "testExchange",
 				Markets: map[string]models.Market{
 					"BTC/USDT": {Id: "BTC/USDT"},
@@ -263,12 +399,38 @@ func TestUpdateMarkets(t *testing.T) {
 		},
 		{
 			name: "empty markets list",
-			initial: &models.Exchange{
+			exchange: &models.Exchange{
 				Id:      "testExchange",
 				Markets: map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT"}},
 			},
 			mockMarkets: []ccxt.MarketInterface{},
 			wantErr:     false,
+		},
+		{
+			name: "invalid taker fee",
+			exchange: &models.Exchange{
+				Id: "testExchange",
+				Markets: map[string]models.Market{
+					"BTC/USDT": {},
+				},
+			},
+			mockMarkets: []ccxt.MarketInterface{
+				{Symbol: newString("BTC/USDT"), Taker: newFloat64(math.Inf(1))},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid maker fee",
+			exchange: &models.Exchange{
+				Id: "testExchange",
+				Markets: map[string]models.Market{
+					"BTC/USDT": {},
+				},
+			},
+			mockMarkets: []ccxt.MarketInterface{
+				{Symbol: newString("BTC/USDT"), Maker: newFloat64(math.Inf(1))},
+			},
+			wantErr: true,
 		},
 	}
 
@@ -276,11 +438,21 @@ func TestUpdateMarkets(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{Markets: tc.mockMarkets}
 			var clientPtr ccxt.IExchange = mockClient
-			var exchangeMu sync.Mutex
-			err := updateMarkets(&clientPtr, tc.initial, &exchangeMu)
+			updatedMarkets, err := fetchFees(&clientPtr, tc.exchange)
 
 			if (err != nil) != tc.wantErr {
-				t.Errorf("Expected error: %v, got: %v", tc.wantErr, err)
+				t.Errorf("fetchFees() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if !tc.wantErr && updatedMarkets != nil {
+				for _, mockMarket := range tc.mockMarkets {
+					if updated, ok := updatedMarkets[*mockMarket.Symbol]; ok {
+						expectedTaker, _ := decimal.NewFromFloat64(*mockMarket.Taker)
+						expectedMaker, _ := decimal.NewFromFloat64(*mockMarket.Maker)
+						if !updated.TakerFee.Equal(expectedTaker) || !updated.MakerFee.Equal(expectedMaker) {
+							t.Errorf("fetchFees() mismatch for %s: want taker: %v, maker %v, got taker: %v, maker: %v", *mockMarket.Symbol, expectedTaker, expectedMaker, updated.TakerFee, updated.MakerFee)
+						}
+					}
+				}
 			}
 		})
 	}
