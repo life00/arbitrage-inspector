@@ -233,22 +233,23 @@ func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Curre
 	marketsList := client.GetMarketsList()
 
 	for _, m := range marketsList {
-		// TODO: first check if both base and quote currencies exist before checking for conditions
+		var baseId string
+		var quoteId string
+		if m.BaseId != nil && m.QuoteId != nil {
+			baseId = strings.ToUpper(*m.BaseId)
+			quoteId = strings.ToUpper(*m.QuoteId)
+		}
 
-		// check all market conditions
-		if m.Active != nil && *m.Active &&
-			m.Spot != nil && *m.Spot &&
-			m.Symbol != nil && m.BaseId != nil && m.QuoteId != nil {
-
-			baseId := strings.ToUpper(*m.BaseId)
-			quoteId := strings.ToUpper(*m.QuoteId)
-			symbol := strings.ToUpper(*m.Symbol)
-
-			// check if both base and quote currencies are in the currency data structure
-			if _, baseExists := currencies[baseId]; baseExists {
-				if _, quoteExists := currencies[quoteId]; quoteExists {
-					markets[symbol] = models.Market{
-						Id:    symbol,
+		// check if both base and quote currencies are in the currency data structure
+		if _, baseExists := currencies[baseId]; baseExists {
+			if _, quoteExists := currencies[quoteId]; quoteExists {
+				// check market conditions
+				if m.Active != nil && *m.Active &&
+					m.Spot != nil && *m.Spot &&
+					m.Symbol != nil {
+					id := strings.ToUpper(*m.Symbol)
+					markets[id] = models.Market{
+						Id:    id,
 						Base:  baseId,
 						Quote: quoteId,
 					}
