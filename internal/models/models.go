@@ -51,12 +51,15 @@ type AssetKey struct {
 
 type Assets map[AssetKey]Asset
 
+type Index map[uint]AssetKey
+
 type Pair struct {
-	Symbol string
-	From   Asset
-	To     Asset
-	Weight decimal.Decimal
-	Side   string
+	Symbol  string
+	From    Asset
+	To      Asset
+	Weight  decimal.Decimal
+	Side    string
+	Network string // can be empty string
 }
 
 type PairKey struct {
