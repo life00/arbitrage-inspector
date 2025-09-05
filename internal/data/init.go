@@ -176,15 +176,16 @@ func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 
 	clients := *clientsPtr
 
-	// TODO: maybe instead of creating validCurrencies array, it might be better to check each currency directly?
 	var validCurrencies []string
 
 	for _, e := range clients {
 		for _, c := range e.GetCurrenciesList() {
-			if c.Active == nil || !*c.Active || c.Deposit == nil || !*c.Deposit || c.Withdraw == nil || !*c.Withdraw || c.Code == nil {
-				continue
+			if c.Active != nil && *c.Active &&
+				c.Deposit != nil && *c.Deposit &&
+				c.Withdraw != nil && *c.Withdraw &&
+				c.Code != nil {
+				validCurrencies = append(validCurrencies, *c.Code)
 			}
-			validCurrencies = append(validCurrencies, *c.Code)
 		}
 	}
 
