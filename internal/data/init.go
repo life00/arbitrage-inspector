@@ -266,19 +266,19 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencySet map[string]struct{}
 
 	currenciesMap := make(map[string]models.Currency)
 
-	// TODO: loop through currencySet instead of currenciesList
+	apiCurrenciesMap := make(map[string]ccxt.Currency)
+	for _, c := range client.GetCurrenciesList() {
+		if c.Code != nil {
+			apiCurrenciesMap[*c.Code] = c
+		}
+	}
 
-	// iterate through the clients currency list and add any that meet the criteria
-	currenciesList := client.GetCurrenciesList()
-	for _, c := range currenciesList {
-		// check all currency conditions
-		if c.Active != nil && *c.Active &&
-			c.Deposit != nil && *c.Deposit &&
-			c.Withdraw != nil && *c.Withdraw &&
-			c.Code != nil {
-
-			currencyId := *c.Code
-			if _, exists := currencySet[currencyId]; exists {
+	for currencyId := range currencySet {
+		if c, exists := apiCurrenciesMap[currencyId]; exists {
+			// check all currency conditions
+			if c.Active != nil && *c.Active &&
+				c.Deposit != nil && *c.Deposit &&
+				c.Withdraw != nil && *c.Withdraw {
 				currenciesMap[currencyId] = models.Currency{Id: currencyId}
 			}
 		}
