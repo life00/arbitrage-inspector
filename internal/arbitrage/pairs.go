@@ -58,7 +58,7 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets)
 		// check if both assets exist
 		if baseOk && quoteOk {
 			// calculate fee multiplier
-			feeMultiplier, _ := decimal.One.Quo(market.TakerFee)
+			feeMultiplier, _ := decimal.One.Sub(market.TakerFee)
 
 			// create the "sell" pair (selling Base for Quote)
 			// you sell the base asset at the bid price to receive the quote asset
