@@ -35,51 +35,64 @@ func createAssetIndex(exchangesPtr *models.Exchanges) (models.Assets, models.Ind
 	return assets, index
 }
 
+// intraExchangePairWorker processes a slice of markets for a single exchange
+// and creates the corresponding trading pairs, applying the taker fee.
 func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets) models.Pairs {
 	assets := *assetsPtr
 	pairs := make(models.Pairs)
+
+	// NOTE: even if there are duplicate markets with opposite sides (e.g. A/B, B/A)
+	// they reflect each other anyways, so the last occurred one is applied to both sides
 
 	for _, m := range markets {
 		market := m.market
 		exchangeId := m.exchangeId
 
-		// define asset keys
-		fromAssetKey := models.AssetKey{Exchange: exchangeId, Currency: market.Base}
-		toAssetKey := models.AssetKey{Exchange: exchangeId, Currency: market.Quote}
+		// retrieve asset information
+		baseAssetKey := models.AssetKey{Exchange: exchangeId, Currency: market.Base}
+		quoteAssetKey := models.AssetKey{Exchange: exchangeId, Currency: market.Quote}
 
-		// retrieve full Asset objects
-		fromAsset, fromOk := assets[fromAssetKey]
-		toAsset, toOk := assets[toAssetKey]
-		// TODO: account for taker/maker fees
-		// FIXME: weight seems to be calculated incorrectly
-		// FIXME: sometimes the markets might have both A/B and B/A sides available
-		// they should prioritized and handled appropriately
+		baseAsset, baseOk := assets[baseAssetKey]
+		quoteAsset, quoteOk := assets[quoteAssetKey]
 
-		// only process if both assets exist
-		if fromOk && toOk {
-			// create the "sell" pair (selling base for quote)
-			// the weight is the bid price (what someone is willing to pay for the base)
+		// check if both assets exist
+		if baseOk && quoteOk {
+			// calculate fee multiplier
+			feeMultiplier, _ := decimal.One.Quo(market.TakerFee)
+
+			// create the "sell" pair (selling Base for Quote)
+			// you sell the base asset at the bid price to receive the quote asset
+			// the fee is taken from the quote asset you receive
 			if market.Bid.Sign() > 0 { // ensure there is a valid bid price
-				sellPairKey := models.PairKey{From: fromAssetKey, To: toAssetKey}
-				pairs[sellPairKey] = models.Pair{
+				// Bid * (1 - TakerFee)
+				effectiveRate, _ := market.Bid.Mul(feeMultiplier)
+
+				pairKey := models.PairKey{From: baseAssetKey, To: quoteAssetKey}
+				pairs[pairKey] = models.Pair{
 					Symbol: market.Id,
-					From:   fromAsset,
-					To:     toAsset,
-					Weight: market.Bid,
+					From:   baseAsset,
+					To:     quoteAsset,
+					Weight: effectiveRate,
 					Side:   "sell",
 				}
 			}
 
-			// Create the "Buy" pair (buying Base with Quote)
-			// The weight is the ask price (what someone is asking for the base)
-			if market.Ask.Sign() > 0 { // Ensure there is a valid ask price
-				weight, _ := decimal.MustNew(1, 0).Quo(market.Ask)
-				buyPairKey := models.PairKey{From: toAssetKey, To: fromAssetKey}
-				pairs[buyPairKey] = models.Pair{
+			// create the "buy" pair (buying Base with Quote)
+			// you buy the base asset at the ask price using the quote asset
+			// the fee is taken from the base asset you receive
+			if market.Ask.Sign() > 0 { // Ensure there is a valid ask price.
+				// the amount of Base you get for 1 Quote before fees is 1 / Ask
+				// (1 / Ask)
+				rate, _ := decimal.One.Quo(market.Ask)
+				// (1 / Ask) * (1 - TakerFee)
+				effectiveRate, _ := rate.Mul(feeMultiplier)
+
+				pairKey := models.PairKey{From: quoteAssetKey, To: baseAssetKey}
+				pairs[pairKey] = models.Pair{
 					Symbol: market.Id,
-					From:   toAsset,
-					To:     fromAsset,
-					Weight: weight, // The weight is 1 / ask_price
+					From:   quoteAsset,
+					To:     baseAsset,
+					Weight: effectiveRate,
 					Side:   "buy",
 				}
 			}
