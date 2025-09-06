@@ -69,11 +69,12 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets)
 
 				pairKey := models.PairKey{From: baseAssetKey, To: quoteAssetKey}
 				pairs[pairKey] = models.Pair{
-					Symbol: market.Id,
-					From:   baseAsset,
-					To:     quoteAsset,
-					Weight: effectiveRate,
-					Side:   "sell",
+					IntraExchange: true,
+					Symbol:        market.Id,
+					From:          baseAsset,
+					To:            quoteAsset,
+					Weight:        effectiveRate,
+					Side:          "sell",
 				}
 			}
 
@@ -89,11 +90,12 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets)
 
 				pairKey := models.PairKey{From: quoteAssetKey, To: baseAssetKey}
 				pairs[pairKey] = models.Pair{
-					Symbol: market.Id,
-					From:   quoteAsset,
-					To:     baseAsset,
-					Weight: effectiveRate,
-					Side:   "buy",
+					IntraExchange: true,
+					Symbol:        market.Id,
+					From:          quoteAsset,
+					To:            baseAsset,
+					Weight:        effectiveRate,
+					Side:          "buy",
 				}
 			}
 		}

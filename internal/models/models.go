@@ -54,12 +54,13 @@ type Assets map[AssetKey]Asset
 type Index map[uint]AssetKey
 
 type Pair struct {
-	Symbol  string
-	From    Asset
-	To      Asset
-	Weight  decimal.Decimal
-	Side    string
-	Network string // can be empty string
+	IntraExchange bool
+	Symbol        string
+	From          Asset
+	To            Asset
+	Weight        decimal.Decimal
+	Side          string // can be empty string, if inter-exchange
+	Network       string // can be empty string, if intra-exchange
 }
 
 type PairKey struct {
