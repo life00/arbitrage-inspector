@@ -75,7 +75,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println(exchanges)
 
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Transforming data
@@ -86,9 +85,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	assets, pairs := arbitrage.GenerateAssetPairs(&exchanges, capital)
+	assets, index, pairs := arbitrage.CreateAssetPairs(&exchanges, capital)
 
-	fmt.Println(pairs, assets)
+	fmt.Println(assets, index, pairs)
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 

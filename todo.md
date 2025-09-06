@@ -7,6 +7,8 @@
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
 - arbitrage
+  - [ ] implement CreateAssetPairs()
+  - [ ] implement tests for CreateAssetPairs()
   - [ ] implement graph library
 - trade
   - ...
