@@ -88,7 +88,18 @@ func main() {
 
 	_, _, pairs := arbitrage.CreateAssetPairs(&exchanges, capital)
 
-	fmt.Println(pairs)
+	type SerializedPair struct {
+		Key   models.PairKey
+		Value models.Pair
+	}
+	var serializedPairs []SerializedPair
+	for key, value := range pairs {
+		serializedPairs = append(serializedPairs, SerializedPair{
+			Key:   key,
+			Value: value,
+		})
+	}
+	saveAnyJson(serializedPairs, "pairs.json")
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 
