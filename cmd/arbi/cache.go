@@ -5,45 +5,44 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
-	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func saveExchanges(exchanges models.Exchanges, filename string) error {
-	data, err := json.MarshalIndent(exchanges, "", "  ")
+func saveAnyJson(data any, filename string) error {
+	file, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		err = fmt.Errorf("failed to marshal JSON: %w", err)
 		slog.Error(err.Error())
 		return err
 	}
 
-	err = os.WriteFile(filename, data, 0644)
+	err = os.WriteFile(filename, file, 0644)
 	if err != nil {
 		err = fmt.Errorf("failed to write to file: %w", err)
 		slog.Error(err.Error())
 		return err
 	}
 
-	slog.Info("exchanges saved successfully", "filename", filename, "size_bytes", len(data))
+	slog.Info("data saved successfully", "filename", filename, "size_bytes", len(file))
 	return nil
 }
 
-func loadExchanges(filename string) (models.Exchanges, error) {
-	data, err := os.ReadFile(filename)
+func loadAnyJson[T any](filename string) (T, error) {
+	var data T
+
+	file, err := os.ReadFile(filename)
 	if err != nil {
 		err = fmt.Errorf("failed to read file: %w", err)
 		slog.Error(err.Error())
-		return nil, err
+		return data, err
 	}
 
-	var exchanges models.Exchanges
-	err = json.Unmarshal(data, &exchanges)
+	err = json.Unmarshal(file, &data)
 	if err != nil {
 		err = fmt.Errorf("failed to unmarshal JSON: %w", err)
 		slog.Error(err.Error())
-		return nil, err
+		return data, err
 	}
 
-	slog.Info("exchanges loaded successfully", "filename", filename, "num_exchanges", len(exchanges))
-	return exchanges, nil
+	slog.Info("data loaded successfully", "filename", filename)
+	return data, nil
 }

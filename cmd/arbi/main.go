@@ -8,6 +8,7 @@ import (
 	"github.com/govalues/decimal"
 	// "github.com/joho/godotenv"
 	"github.com/life00/arbitrage-inspector/internal/arbitrage"
+	"github.com/life00/arbitrage-inspector/internal/models"
 	// "github.com/life00/arbitrage-inspector/internal/data"
 	// "github.com/life00/arbitrage-inspector/internal/models"
 )
@@ -70,7 +71,7 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	exchanges, err := loadExchanges("exchanges.json")
+	exchanges, err := loadAnyJson[models.Exchanges]("exchanges.json")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -85,9 +86,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	assets, index, pairs := arbitrage.CreateAssetPairs(&exchanges, capital)
+	_, _, pairs := arbitrage.CreateAssetPairs(&exchanges, capital)
 
-	fmt.Println(assets, index, pairs)
+	fmt.Println(pairs)
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 
