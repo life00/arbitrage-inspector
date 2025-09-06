@@ -80,7 +80,7 @@ func main() {
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Transforming data
 
-	capital, err := decimal.NewFromFloat64(100)
+	capital, err := decimal.NewFromInt64(100, 0, 0)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
