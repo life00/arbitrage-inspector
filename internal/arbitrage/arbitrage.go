@@ -21,6 +21,7 @@ type exchangeMarket struct {
 // It calculates the total number of markets and distributes them across
 // multiple concurrent workers to process them in parallel.
 func createIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.Assets) models.Pairs {
+	slog.Debug("creating intra-exchange pairs...")
 	exchanges := *exchangesPtr
 	allMarkets := make([]exchangeMarket, 0)
 
@@ -90,6 +91,7 @@ type interExchangeCurrency struct {
 // It calculates the total number of currencies and distributes them across
 // multiple concurrent workers to process them in parallel.
 func createInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.Assets, capital decimal.Decimal) models.Pairs {
+	slog.Debug("creating inter-exchange pairs...")
 	exchanges := *exchangesPtr
 
 	// create a map to store all unique currencies and the exchanges they are available on
@@ -164,11 +166,9 @@ func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (
 
 	pairs := make(models.Pairs)
 
-	slog.Info("creating intra-exchange pairs...")
 	intraExchangePairs := createIntraExchangePairs(exchangesPtr, &assets)
 	maps.Copy(pairs, intraExchangePairs)
 
-	slog.Info("creating inter-exchange pairs...")
 	interExchangePairs := createInterExchangePairs(exchangesPtr, &assets, capital)
 	maps.Copy(pairs, interExchangePairs)
 
