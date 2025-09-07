@@ -365,3 +365,202 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateInterExchangePairs(t *testing.T) {
+	testCases := []struct {
+		name          string
+		exchangesPtr  *models.Exchanges
+		assetsPtr     *models.Assets
+		capital       decimal.Decimal
+		expectedPairs models.Pairs
+	}{
+		{
+			name: "multiple exchanges with common currency and networks",
+			exchangesPtr: &models.Exchanges{
+				"binance": {
+					Id: "binance",
+					Currencies: map[string]models.Currency{
+						"BTC": {
+							Id: "BTC",
+							Networks: map[string]models.CurrencyNetwork{
+								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},    // 0.00005
+								"TRC20": {Id: "TRC20", WithdrawalFee: decimal.MustNew(10, 5)}, // 0.00010
+							},
+						},
+					},
+				},
+				"kraken": {
+					Id: "kraken",
+					Currencies: map[string]models.Currency{
+						"BTC": {
+							Id: "BTC",
+							Networks: map[string]models.CurrencyNetwork{
+								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},    // 0.00005
+								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(20, 5)}, // 0.00020
+							},
+						},
+					},
+				},
+			},
+			assetsPtr: &models.Assets{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}: models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+				models.AssetKey{Exchange: "kraken", Currency: "BTC"}:  models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+			},
+			capital: decimal.MustNew(1, 0), // 1 BTC
+			expectedPairs: models.Pairs{
+				models.PairKey{
+					From: models.AssetKey{Exchange: "binance", Currency: "BTC"},
+					To:   models.AssetKey{Exchange: "kraken", Currency: "BTC"},
+				}: models.Pair{
+					IntraExchange: false,
+					From:          models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					To:            models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+					Weight:        decimal.MustNew(99995, 5), // (1 - 0.00005) / 1
+					Network:       "BTC",
+				},
+				models.PairKey{
+					From: models.AssetKey{Exchange: "kraken", Currency: "BTC"},
+					To:   models.AssetKey{Exchange: "binance", Currency: "BTC"},
+				}: models.Pair{
+					IntraExchange: false,
+					From:          models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					Weight:        decimal.MustNew(99995, 5), // (1 - 0.00005) / 1
+					Network:       "BTC",
+				},
+			},
+		},
+		{
+			name: "no common networks between exchanges",
+			exchangesPtr: &models.Exchanges{
+				"binance": {
+					Id: "binance",
+					Currencies: map[string]models.Currency{
+						"ETH": {
+							Id: "ETH",
+							Networks: map[string]models.CurrencyNetwork{
+								"ETH": {Id: "ETH", WithdrawalFee: decimal.MustNew(1, 4)}, // 0.0001
+							},
+						},
+					},
+				},
+				"kraken": {
+					Id: "kraken",
+					Currencies: map[string]models.Currency{
+						"ETH": {
+							Id: "ETH",
+							Networks: map[string]models.CurrencyNetwork{
+								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(2, 4)}, // 0.0002
+							},
+						},
+					},
+				},
+			},
+			assetsPtr: &models.Assets{
+				models.AssetKey{Exchange: "binance", Currency: "ETH"}: models.Asset{Exchange: "binance", Currency: "ETH", Index: 0},
+				models.AssetKey{Exchange: "kraken", Currency: "ETH"}:  models.Asset{Exchange: "kraken", Currency: "ETH", Index: 1},
+			},
+			capital:       decimal.MustNew(1, 0),
+			expectedPairs: models.Pairs{},
+		},
+		{
+			name:          "empty exchanges",
+			exchangesPtr:  &models.Exchanges{},
+			assetsPtr:     &models.Assets{},
+			capital:       decimal.MustNew(1, 0),
+			expectedPairs: models.Pairs{},
+		},
+		{
+			name: "multiple currencies, some with common networks",
+			exchangesPtr: &models.Exchanges{
+				"binance": {
+					Id: "binance",
+					Currencies: map[string]models.Currency{
+						"BTC": {
+							Id: "BTC",
+							Networks: map[string]models.CurrencyNetwork{
+								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},
+								"TRC20": {Id: "TRC20", WithdrawalFee: decimal.MustNew(10, 5)},
+							},
+						},
+						"ETH": {
+							Id: "ETH",
+							Networks: map[string]models.CurrencyNetwork{
+								"ERC20": {Id: "ERC20", WithdrawalFee: decimal.MustNew(1, 4)},
+							},
+						},
+					},
+				},
+				"kraken": {
+					Id: "kraken",
+					Currencies: map[string]models.Currency{
+						"BTC": {
+							Id: "BTC",
+							Networks: map[string]models.CurrencyNetwork{
+								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(6, 5)}, // 0.00006
+								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(20, 5)},
+							},
+						},
+						"ETH": {
+							Id: "ETH",
+							Networks: map[string]models.CurrencyNetwork{
+								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(2, 4)},
+							},
+						},
+					},
+				},
+			},
+			assetsPtr: &models.Assets{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}: models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+				models.AssetKey{Exchange: "kraken", Currency: "BTC"}:  models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+				models.AssetKey{Exchange: "binance", Currency: "ETH"}: models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
+				models.AssetKey{Exchange: "kraken", Currency: "ETH"}:  models.Asset{Exchange: "kraken", Currency: "ETH", Index: 3},
+			},
+			capital: decimal.MustNew(1, 0),
+			expectedPairs: models.Pairs{
+				models.PairKey{
+					From: models.AssetKey{Exchange: "binance", Currency: "BTC"},
+					To:   models.AssetKey{Exchange: "kraken", Currency: "BTC"},
+				}: models.Pair{
+					IntraExchange: false,
+					From:          models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					To:            models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+					Weight:        decimal.MustNew(99995, 5), // (1 - 0.00005) / 1
+					Network:       "BTC",
+				},
+				models.PairKey{
+					From: models.AssetKey{Exchange: "kraken", Currency: "BTC"},
+					To:   models.AssetKey{Exchange: "binance", Currency: "BTC"},
+				}: models.Pair{
+					IntraExchange: false,
+					From:          models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					Weight:        decimal.MustNew(99994, 5), // (1 - 0.00006) / 1
+					Network:       "BTC",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotPairs := createInterExchangePairs(tc.exchangesPtr, tc.assetsPtr, tc.capital)
+
+			if len(gotPairs) != len(tc.expectedPairs) {
+				t.Fatalf("createInterExchangePairs() returned incorrect number of pairs. Got: %d, Want: %d", len(gotPairs), len(tc.expectedPairs))
+			}
+
+			// the order of pairs in the map can be non-deterministic due to concurrent workers.
+			// compare the maps for equality.
+			if !maps.EqualFunc(gotPairs, tc.expectedPairs, func(a, b models.Pair) bool {
+				return a.IntraExchange == b.IntraExchange &&
+					a.From == b.From &&
+					a.To == b.To &&
+					a.Network == b.Network &&
+					a.Weight.Cmp(b.Weight) == 0
+			}) {
+				t.Fatalf("createInterExchangePairs() returned incorrect pairs.\nGot: %+v\nWant: %+v", gotPairs, tc.expectedPairs)
+			}
+		})
+	}
+}

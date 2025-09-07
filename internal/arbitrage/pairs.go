@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"maps"
 	"runtime"
-	"strings"
 	"sync"
 
 	"github.com/govalues/decimal"
@@ -296,8 +295,7 @@ func interExchangePairWorker(
 				firstCommonNetworkFound := false
 
 				for fromNetworkId, fromNetwork := range fromCurrency.Networks {
-					toNetworkId := strings.ToUpper(fromNetworkId)
-					if _, ok := toCurrency.Networks[toNetworkId]; ok {
+					if _, ok := toCurrency.Networks[fromNetworkId]; ok {
 						// use Cmp to compare decimal values; Cmp returns -1 if less than, 0 if equal, 1 if greater than
 						if !firstCommonNetworkFound || fromNetwork.WithdrawalFee.Cmp(minFee) < 0 {
 							minFee = fromNetwork.WithdrawalFee
