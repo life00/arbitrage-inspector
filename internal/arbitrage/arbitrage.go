@@ -8,7 +8,7 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (models.Assets, models.Index, models.Pairs) {
+func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (models.Pairs, models.Assets, models.Index) {
 	if exchangesPtr == nil || len(*exchangesPtr) == 0 {
 		slog.Warn("exchanges data is empty")
 		return nil, nil, nil
@@ -24,5 +24,13 @@ func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (
 	interExchangePairs := createInterExchangePairs(exchangesPtr, &assets, capital)
 	maps.Copy(pairs, interExchangePairs)
 
-	return assets, index, pairs
+	return pairs, assets, index
+}
+
+func FindArbitrage(pairs *models.Pairs, assets *models.Assets, index *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
+	// convert input into vertices and edges data format
+	// create a graph data type using vertices and edges
+	// run bellman-ford negative cycle algorithm
+	// translate index transaction into TransactionPath type
+	return nil
 }

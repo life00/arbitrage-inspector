@@ -69,3 +69,5 @@ type PairKey struct {
 }
 
 type Pairs map[PairKey]Pair
+
+type TransactionPath []PairKey
