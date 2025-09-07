@@ -102,6 +102,7 @@ func main() {
 		})
 	}
 	saveAnyJson(serializedPairs, "/home/user/dev/src/arbitrage/pairs.json")
+	saveAnyJson(exchanges, "/home/user/dev/src/arbitrage/exchanges.json")
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 

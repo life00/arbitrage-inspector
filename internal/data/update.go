@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -186,8 +187,9 @@ func fetchCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[
 						slog.Warn(fmt.Sprintf("invalid fee for currency %s on network %s: %v", id, name, err))
 						continue // Skip this network if fee is invalid
 					}
-					updatedCurrency.Networks[name] = models.CurrencyNetwork{
-						Id:            name,
+					uppercaseName := strings.ToUpper(name)
+					updatedCurrency.Networks[uppercaseName] = models.CurrencyNetwork{
+						Id:            uppercaseName,
 						WithdrawalFee: fee,
 					}
 				}
