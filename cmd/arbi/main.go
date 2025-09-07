@@ -71,7 +71,7 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	exchanges, err := loadAnyJson[models.Exchanges]("exchanges.json")
+	exchanges, err := loadAnyJson[models.Exchanges]("/home/user/dev/src/arbitrage/exchanges.json")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -99,7 +99,7 @@ func main() {
 			Value: value,
 		})
 	}
-	saveAnyJson(serializedPairs, "pairs.json")
+	saveAnyJson(serializedPairs, "/home/user/dev/src/arbitrage/pairs.json")
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
 
