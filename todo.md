@@ -5,11 +5,12 @@
   - [ ] unified network names
     - `exchange.options['networks']{'UNIFIED_KEY': 'ID'}`
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
+  - [ ] make all network names upper case for consistency
   - [ ] create functionality to automatically generate currencies if no currencies are provided
     - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
 - arbitrage
-  - [ ] implement CreateAssetPairs()
-  - [ ] implement tests for CreateAssetPairs()
+  - [x] implement CreateAssetPairs()
+  - [x] implement tests for CreateAssetPairs()
   - [ ] implement graph library
 - trade
   - ...
