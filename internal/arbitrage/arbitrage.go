@@ -54,6 +54,10 @@ func createIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 		start := i * marketsPerWorker
 		end := start + marketsPerWorker
 		end = min(end, totalMarkets)
+		if start >= end {
+			break // stop creating workers if no more work is available
+		}
+
 		workerMarkets := allMarkets[start:end]
 
 		wg.Add(1)
@@ -76,9 +80,78 @@ func createIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 	return finalPairs
 }
 
-func createInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.Assets) models.Pairs {
-	// prepare the data and distribute across interExchangePairWorkers
-	return nil
+// interExchangeCurrency represents a currency and exchanges which support it
+type interExchangeCurrency struct {
+	currency  string
+	exchanges []string
+}
+
+// createInterExchangePairs creates trading pairs across exchanges.
+// It calculates the total number of currencies and distributes them across
+// multiple concurrent workers to process them in parallel.
+func createInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.Assets, capital decimal.Decimal) models.Pairs {
+	exchanges := *exchangesPtr
+
+	// create a map to store all unique currencies and the exchanges they are available on
+	currencies := make(map[string][]string)
+	for exchangeId, exchange := range exchanges {
+		for currencyId := range exchange.Currencies {
+			currencies[currencyId] = append(currencies[currencyId], exchangeId)
+		}
+	}
+
+	// flatten the map into a slice of interExchangeCurrency structs
+	allCurrencies := make([]interExchangeCurrency, 0, len(currencies))
+	for currency, exchangeList := range currencies {
+		allCurrencies = append(allCurrencies, interExchangeCurrency{
+			currency:  currency,
+			exchanges: exchangeList,
+		})
+	}
+
+	totalCurrencies := len(allCurrencies)
+	if totalCurrencies == 0 {
+		return make(models.Pairs)
+	}
+
+	// determine the number of workers needed based on CPU core count
+	numWorkers := min(runtime.GOMAXPROCS(0), totalCurrencies)
+
+	// calculate the chunk size for each worker
+	currenciesPerWorker := (totalCurrencies + numWorkers - 1) / numWorkers
+	var wg sync.WaitGroup
+	resultsChan := make(chan models.Pairs, numWorkers)
+
+	// distribute and launch workers
+	for i := range numWorkers {
+		// calculate the slice of currencies for the current worker
+		start := i * currenciesPerWorker
+		end := start + currenciesPerWorker
+		end = min(end, totalCurrencies)
+		if start >= end {
+			break // stop creating workers if no more work is available
+		}
+
+		workerCurrencies := allCurrencies[start:end]
+
+		wg.Add(1)
+		go func(currencies []interExchangeCurrency) {
+			defer wg.Done()
+			workerResult := interExchangePairWorker(currencies, exchangesPtr, assetsPtr, capital)
+			resultsChan <- workerResult
+		}(workerCurrencies)
+	}
+
+	wg.Wait()
+	close(resultsChan)
+
+	// merge results into a single map
+	finalPairs := make(models.Pairs)
+	for workerResult := range resultsChan {
+		maps.Copy(finalPairs, workerResult)
+	}
+
+	return finalPairs
 }
 
 func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (models.Assets, models.Index, models.Pairs) {
@@ -91,10 +164,12 @@ func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (
 
 	pairs := make(models.Pairs)
 
+	slog.Info("creating intra-exchange pairs...")
 	intraExchangePairs := createIntraExchangePairs(exchangesPtr, &assets)
 	maps.Copy(pairs, intraExchangePairs)
 
-	interExchangePairs := createInterExchangePairs(exchangesPtr, &assets)
+	slog.Info("creating inter-exchange pairs...")
+	interExchangePairs := createInterExchangePairs(exchangesPtr, &assets, capital)
 	maps.Copy(pairs, interExchangePairs)
 
 	return assets, index, pairs

@@ -1,7 +1,9 @@
 package arbitrage
 
 import (
+	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
@@ -100,5 +102,103 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets)
 			}
 		}
 	}
+	return pairs
+}
+
+// interExchangePairWorker processes a slice of currencies and creates the corresponding
+// inter-exchange trading pairs.
+func interExchangePairWorker(
+	currencies []interExchangeCurrency,
+	exchangesPtr *models.Exchanges,
+	assetsPtr *models.Assets,
+	capital decimal.Decimal,
+) models.Pairs {
+	exchanges := *exchangesPtr
+	assets := *assetsPtr
+	pairs := make(models.Pairs)
+
+	for _, c := range currencies {
+		// create pairs for all combinations of exchanges for the current currency
+		for _, fromExchangeId := range c.exchanges {
+			for _, toExchangeId := range c.exchanges {
+				// avoid creating a pair to and from the same exchange
+				if fromExchangeId == toExchangeId {
+					continue
+				}
+
+				// retrieve exchange and currency information
+				fromExchange, fromExchangeOk := exchanges[fromExchangeId]
+				toExchange, toExchangeOk := exchanges[toExchangeId]
+				if !fromExchangeOk || !toExchangeOk {
+					slog.Warn("missing exchange information for %s or %s", fromExchangeId, toExchangeId)
+					continue
+				}
+
+				fromCurrency, fromCurrencyOk := fromExchange.Currencies[c.currency]
+				toCurrency, toCurrencyOk := toExchange.Currencies[c.currency]
+				if !fromCurrencyOk || !toCurrencyOk {
+					slog.Warn(fmt.Sprintf("missing currency information for %s on exchange %s or %s", c.currency, fromExchangeId, toExchangeId))
+					continue
+				}
+
+				// find common networks and the one with the cheapest withdrawal fee
+				var cheapestNetwork string
+				minFee := decimal.Zero
+				firstCommonNetworkFound := false
+
+				for fromNetworkId, fromNetwork := range fromCurrency.Networks {
+					toNetworkId := strings.ToUpper(fromNetworkId)
+					if _, ok := toCurrency.Networks[toNetworkId]; ok {
+						// use Cmp to compare decimal values; Cmp returns -1 if less than, 0 if equal, 1 if greater than
+						if !firstCommonNetworkFound || fromNetwork.WithdrawalFee.Cmp(minFee) < 0 {
+							minFee = fromNetwork.WithdrawalFee
+							cheapestNetwork = fromNetworkId
+							firstCommonNetworkFound = true
+						}
+					}
+				}
+
+				if !firstCommonNetworkFound {
+					continue
+				}
+
+				// create asset keys and retrieve asset information
+				fromAssetKey := models.AssetKey{Exchange: fromExchangeId, Currency: c.currency}
+				toAssetKey := models.AssetKey{Exchange: toExchangeId, Currency: c.currency}
+
+				fromAsset, fromAssetOk := assets[fromAssetKey]
+				toAsset, toAssetOk := assets[toAssetKey]
+				if !fromAssetOk || !toAssetOk {
+					slog.Warn("missing asset information for %s on %s or %s on %s", c.currency, fromExchangeId, c.currency, toExchangeId)
+					continue
+				}
+
+				// calculate the effective rate after withdrawal fees
+				if minFee.Sign() < 0 {
+					continue
+				}
+
+				if capital.Sign() <= 0 {
+					continue
+				}
+
+				effectiveCapital, _ := capital.Sub(minFee)
+				if effectiveCapital.Sign() <= 0 {
+					continue
+				}
+				effectiveRate, _ := effectiveCapital.Quo(capital)
+
+				pairKey := models.PairKey{From: fromAssetKey, To: toAssetKey}
+				pairs[pairKey] = models.Pair{
+					IntraExchange: false,
+					From:          fromAsset,
+					To:            toAsset,
+					Weight:        effectiveRate,
+					Network:       cheapestNetwork,
+				}
+			}
+		}
+	}
+
 	return pairs
 }
