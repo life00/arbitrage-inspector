@@ -10,6 +10,7 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/arbitrage"
 	// "github.com/life00/arbitrage-inspector/internal/data"
 	"github.com/life00/arbitrage-inspector/internal/models"
+	"github.com/life00/arbitrage-inspector/internal/trade"
 	"github.com/lmittmann/tint"
 )
 
@@ -111,7 +112,8 @@ func main() {
 	if path == nil {
 		slog.Info("no arbitrage opportunity found")
 	} else {
-		slog.Info("arbitrage opportunity found", "path", path)
+		expectedReturn := trade.CalculateExpectedReturn(path, &pairs)
+		slog.Info("arbitrage opportunity found", "path", path, "expectedReturn", expectedReturn)
 	}
 
 	// 3. Trade execution using trade.go
