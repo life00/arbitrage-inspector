@@ -11,6 +11,11 @@
 - arbitrage
   - [x] implement CreateAssetPairs()
   - [x] implement tests for CreateAssetPairs()
-  - [ ] implement graph library
+  - [x] implement graph library
+  - [ ] figure out what is wrong with the graph library
+    - figure out why it doesn't do cross-exchange arbitrage
+    - make it produce the full path from source to arbitrage and back to source
+  - [ ] implement tests for `bellman_ford.go`
+  - [ ] find why it doesn't find arbitrage in the actual market data
 - trade
   - ...
