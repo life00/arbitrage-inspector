@@ -3,6 +3,7 @@ package arbitrage
 import (
 	"log/slog"
 	"maps"
+	// "math"
 
 	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
@@ -27,10 +28,25 @@ func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (
 	return pairs, assets, index
 }
 
-func FindArbitrage(pairs *models.Pairs, assets *models.Assets, index *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
-	// convert input into vertices and edges data format
-	// create a graph data type using vertices and edges
-	// run bellman-ford negative cycle algorithm
-	// translate index transaction into TransactionPath type
-	return nil
+func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.Assets, indexPtr *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
+	slog.Info("finding arbitrage path...")
+
+	assets := *assetsPtr
+	source := assets[sourceAsset].Index
+
+	// prepare the inputs
+	slog.Debug("creating graph data...")
+	edges := getEdges(pairsPtr)
+	vertices := getVertices(assetsPtr)
+	graph := newGraph(edges, vertices)
+
+	// run the algorithm
+	cyclePath := graph.findArbitrageCycle(source)
+
+	if cyclePath == nil {
+		return nil
+	}
+
+	// translate the output if a cycle is found
+	return translatePath(cyclePath, indexPtr)
 }

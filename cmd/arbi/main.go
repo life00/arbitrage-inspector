@@ -108,7 +108,11 @@ func main() {
 
 	path := arbitrage.FindArbitrage(&pairs, &assets, &index, sourceAsset)
 
-	fmt.Println(path)
+	if path == nil {
+		slog.Info("no arbitrage opportunity found")
+	} else {
+		slog.Info("arbitrage opportunity found", "path", path)
+	}
 
 	// 3. Trade execution using trade.go
 	// 3.1. While the arbitrage is still present continue the trading cycle (check using data.go)
