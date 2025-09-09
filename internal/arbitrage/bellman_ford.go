@@ -57,7 +57,7 @@ func newGraph(edges []*Edge, vertices []uint) *Graph {
 func (g *Graph) findArbitrageCycle(source uint) []uint {
 	slog.Debug("running algorithm...")
 	predecessors, distances := g.bellmanFord(source)
-	return g.findNegativeWeightCycle(predecessors, distances, source)
+	return g.findNegativeWeightCycle(predecessors, distances)
 }
 
 // bellmanFord determines the shortest path and returns the predecessors and distances
@@ -65,6 +65,7 @@ func (g *Graph) bellmanFord(source uint) ([]uint, []float64) {
 	size := len(g.vertices)
 	distances := make([]float64, size)
 	predecessors := make([]uint, size)
+
 	for _, v := range g.vertices {
 		distances[v] = math.MaxFloat64
 	}
@@ -72,7 +73,8 @@ func (g *Graph) bellmanFord(source uint) ([]uint, []float64) {
 
 	for i, changes := 0, 0; i < size-1; i, changes = i+1, 0 {
 		for _, edge := range g.edges {
-			if newDist := distances[edge.From] + edge.Weight; newDist < distances[edge.To] {
+			newDist := distances[edge.From] + edge.Weight
+			if newDist < distances[edge.To] {
 				distances[edge.To] = newDist
 				predecessors[edge.To] = edge.From
 				changes++
@@ -85,36 +87,67 @@ func (g *Graph) bellmanFord(source uint) ([]uint, []float64) {
 	return predecessors, distances
 }
 
-// findNegativeWeightCycle finds a negative weight cycle from predecessors and a source
-func (g *Graph) findNegativeWeightCycle(predecessors []uint, distances []float64, source uint) []uint {
+// findNegativeWeightCycle finds a negative weight cycle from the results of Bellman-Ford
+func (g *Graph) findNegativeWeightCycle(predecessors []uint, distances []float64) []uint {
 	for _, edge := range g.edges {
+		// if this condition is met after the main Bellman-Ford loops, a negative cycle exists
 		if distances[edge.From]+edge.Weight < distances[edge.To] {
-			return reconstructPath(predecessors, source)
+			// The node edge.To is part of, or reachable from, the negative cycle.
+			// To find a node that is *guaranteed* to be on the cycle, we can
+			// trace back len(vertices) times. This moves us from any "handle" path
+			// onto a node within the cycle itself.
+			cycleNode := edge.To
+			for range len(g.vertices) {
+				cycleNode = predecessors[cycleNode]
+			}
+
+			// now, we can reconstruct the path starting from a node we know is on the cycle
+			return reconstructPath(predecessors, cycleNode)
 		}
 	}
 	return nil
 }
 
-func reconstructPath(predecessors []uint, source uint) []uint {
+func reconstructPath(predecessors []uint, startNode uint) []uint {
 	size := len(predecessors)
-	path := make([]uint, size)
-	path[0] = source
+	path := make([]uint, 0, size)
 
-	exists := make([]bool, size)
-	exists[source] = true
+	// start with the node known to be in the cycle
+	currentNode := startNode
 
-	indices := make([]uint, size)
+	// use a map to detect when we've completed the cycle
+	visited := make(map[uint]bool)
 
-	var index, next uint
-	for index, next = 1, source; ; index++ {
-		next = predecessors[next]
-		path[index] = next
-		if exists[next] {
-			return path[indices[next] : index+1]
-		}
-		indices[next] = index
-		exists[next] = true
+	// trace back predecessors until we find a node we've already seen
+	// this marks the beginning and end of the cycle
+	for !visited[currentNode] {
+		visited[currentNode] = true
+		path = append(path, currentNode)
+		currentNode = predecessors[currentNode]
 	}
+
+	// the currentNode is now the first node of the cycle that we encountered again
+	// we need to find where this node appeared in our path to isolate the cycle
+	cycleStartIndex := -1
+	for i, node := range path {
+		if node == currentNode {
+			cycleStartIndex = i
+			break
+		}
+	}
+
+	// slice the path to get only the cycle
+	cycle := path[cycleStartIndex:]
+
+	// add the start node again to close the loop for translation
+	cycle = append(cycle, currentNode)
+
+	// reverse the slice to get the correct path order (e.g., a -> b -> c -> a)
+	for i, j := 0, len(cycle)-1; i < j; i, j = i+1, j-1 {
+		cycle[i], cycle[j] = cycle[j], cycle[i]
+	}
+
+	return cycle
 }
 
 func translatePath(cyclePath []uint, indexPtr *models.Index) models.TransactionPath {
@@ -127,6 +160,7 @@ func translatePath(cyclePath []uint, indexPtr *models.Index) models.TransactionP
 		return transactionPath
 	}
 
+	// loop to length-1 because the last element closes the cycle with the first
 	for i := range length - 1 {
 		fromAsset := index[cyclePath[i]]
 		toAsset := index[cyclePath[i+1]]
