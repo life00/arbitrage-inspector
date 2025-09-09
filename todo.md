@@ -7,14 +7,14 @@
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
   - [x] make all network names upper case for consistency
   - [ ] create functionality to automatically generate currencies if no currencies are provided
-    - it should probably generate it based on available common markets, while prioritizing non-stablecoins as connection currencies
+    - figure out the criteria for currency selection
 - arbitrage
   - [x] implement CreateAssetPairs()
   - [x] implement tests for CreateAssetPairs()
   - [x] implement graph library
   - [ ] figure out what is wrong with the graph library
-    - figure out why it doesn't do cross-exchange arbitrage
-    - make it produce the full path from source to arbitrage and back to source
+    - why doesn't it produce full path from source to arbitrage and back to source?
+    - why some of the arbitrage paths result in a loss?
   - [ ] implement tests for `bellman_ford.go`
   - [ ] find why it doesn't find arbitrage in the actual market data
 - trade
