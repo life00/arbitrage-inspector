@@ -13,9 +13,8 @@
   - [x] implement tests for CreateAssetPairs()
   - [x] implement graph library
   - [ ] figure out what is wrong with the graph library
-    - why doesn't it produce full path from source to arbitrage and back to source?
-    - why some of the arbitrage paths result in a loss?
+    - why doesn't the arbitrage path start from the source asset?
   - [ ] implement tests for `bellman_ford.go`
-  - [ ] find why it doesn't find arbitrage in the actual market data
+  - [ ] find assets which maximize the chance of arbitrage
 - trade
   - ...

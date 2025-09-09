@@ -3,7 +3,6 @@ package arbitrage
 import (
 	"log/slog"
 	"maps"
-	// "math"
 
 	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
