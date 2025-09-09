@@ -287,8 +287,8 @@ func TestFetchCurrencies(t *testing.T) {
 					"BTC": {
 						Id: newString("BTC"),
 						Networks: map[string]ccxt.Network{
-							"Bitcoin":   {Active: newBool(true), Fee: newFloat64(0.0005), Deposit: newBool(true), Withdraw: newBool(true)},
-							"Lightning": {Active: newBool(true), Fee: newFloat64(0.0001), Deposit: newBool(true), Withdraw: newBool(true)},
+							"BITCOIN":   {Active: newBool(true), Fee: newFloat64(0.0005), Deposit: newBool(true), Withdraw: newBool(true)},
+							"LIGHTNING": {Active: newBool(true), Fee: newFloat64(0.0001), Deposit: newBool(true), Withdraw: newBool(true)},
 						},
 					},
 					"ETH": {
