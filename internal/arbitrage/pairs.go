@@ -339,6 +339,7 @@ func interExchangePairWorker(
 
 				effectiveCapital, _ := capital.Sub(minFee)
 				if effectiveCapital.Sign() <= 0 {
+					slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.Id)
 					continue
 				}
 				effectiveRate, _ := effectiveCapital.Quo(capital)
