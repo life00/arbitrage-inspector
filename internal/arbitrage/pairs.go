@@ -134,6 +134,10 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets)
 		if baseOk && quoteOk {
 			// calculate fee multiplier
 			feeMultiplier, _ := decimal.One.Sub(market.TakerFee)
+			if market.TakerFee.Sign() == -1 {
+				slog.Warn("taker fee is negative", "exchange", exchangeId, "market", market.Id)
+				continue
+			}
 			if feeMultiplier.Sign() != 1 {
 				slog.Warn("taker fee >= 100%; skipping", "exchange", exchangeId, "market", market.Id)
 				continue
