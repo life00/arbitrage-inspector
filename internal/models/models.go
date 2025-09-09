@@ -34,7 +34,6 @@ type Market struct {
 	Ask       decimal.Decimal
 	Bid       decimal.Decimal
 	TakerFee  decimal.Decimal
-	MakerFee  decimal.Decimal
 	Timestamp time.Time
 }
 

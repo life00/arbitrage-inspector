@@ -109,7 +109,6 @@ func updateExchange(
 	for id, feeUpdate := range updatedMarketsFees {
 		market := exchange.Markets[id]
 		market.TakerFee = feeUpdate.TakerFee
-		market.MakerFee = feeUpdate.MakerFee
 		exchange.Markets[id] = market
 	}
 
@@ -231,12 +230,6 @@ func fetchFees(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[string
 				}
 			}
 
-			if apiMarket.Maker != nil {
-				var err error
-				if updatedFee.MakerFee, err = decimal.NewFromFloat64(*apiMarket.Maker); err != nil {
-					return nil, fmt.Errorf("invalid maker fee for %s: %w", id, err)
-				}
-			}
 			updatedFees[id] = updatedFee
 		}
 	}

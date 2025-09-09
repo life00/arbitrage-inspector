@@ -57,7 +57,7 @@ func TestUpdateExchange(t *testing.T) {
 					},
 				},
 				Markets: []ccxt.MarketInterface{
-					{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001), Maker: newFloat64(0.0005)},
+					{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001)},
 				},
 			},
 			updateCurrencyFees: true,
@@ -392,8 +392,8 @@ func TestFetchMarkets(t *testing.T) {
 				},
 			},
 			mockMarkets: []ccxt.MarketInterface{
-				{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001), Maker: newFloat64(0.0005)},
-				{Symbol: newString("ETH/SOL"), Taker: newFloat64(0.002), Maker: newFloat64(0.0015)},
+				{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001)},
+				{Symbol: newString("ETH/SOL"), Taker: newFloat64(0.002)},
 			},
 			wantErr: false,
 		},
@@ -420,7 +420,7 @@ func TestFetchMarkets(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid maker fee",
+			name: "invalid taker fee",
 			exchange: &models.Exchange{
 				Id: "testExchange",
 				Markets: map[string]models.Market{
@@ -428,7 +428,7 @@ func TestFetchMarkets(t *testing.T) {
 				},
 			},
 			mockMarkets: []ccxt.MarketInterface{
-				{Symbol: newString("BTC/USDT"), Maker: newFloat64(math.Inf(1))},
+				{Symbol: newString("BTC/USDT"), Taker: newFloat64(math.Inf(1))},
 			},
 			wantErr: true,
 		},
@@ -447,9 +447,8 @@ func TestFetchMarkets(t *testing.T) {
 				for _, mockMarket := range tc.mockMarkets {
 					if updated, ok := updatedMarkets[*mockMarket.Symbol]; ok {
 						expectedTaker, _ := decimal.NewFromFloat64(*mockMarket.Taker)
-						expectedMaker, _ := decimal.NewFromFloat64(*mockMarket.Maker)
-						if !updated.TakerFee.Equal(expectedTaker) || !updated.MakerFee.Equal(expectedMaker) {
-							t.Errorf("fetchFees() mismatch for %s: want taker: %v, maker %v, got taker: %v, maker: %v", *mockMarket.Symbol, expectedTaker, expectedMaker, updated.TakerFee, updated.MakerFee)
+						if !updated.TakerFee.Equal(expectedTaker) {
+							t.Errorf("fetchFees() mismatch for %s: want taker fee: %v, got taker fee: %v", *mockMarket.Symbol, expectedTaker, updated.TakerFee)
 						}
 					}
 				}
