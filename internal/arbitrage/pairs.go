@@ -134,6 +134,10 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets)
 		if baseOk && quoteOk {
 			// calculate fee multiplier
 			feeMultiplier, _ := decimal.One.Sub(market.TakerFee)
+			if feeMultiplier.Sign() != 1 {
+				slog.Warn("taker fee >= 100%; skipping", "exchange", exchangeId, "market", market.Id)
+				continue
+			}
 
 			// create the "sell" pair (selling Base for Quote)
 			// you sell the base asset at the bid price to receive the quote asset
