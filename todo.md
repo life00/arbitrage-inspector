@@ -10,7 +10,9 @@
     - figure out the criteria for currency selection
   - [ ] **find assets which maximize the chance of arbitrage**
     - it likely requires arbitrage to have >0.1% deviation of prices to fully cover taker fees
+      - estimate the necessary price deviation for a feasible arbitrage opportunity
     - or consider **how to reduce the fees?** use maker fees? find exchanges with exclusive cheaper fees?
+    - I need to make a cryptocurrency conversion network as large as possible (with as many assets and exchanges as possible), and run the algorithm on it for a while to see if there is any occurrence of arbitrage with fees
 - arbitrage
   - [x] implement CreateAssetPairs()
   - [x] implement tests for CreateAssetPairs()
