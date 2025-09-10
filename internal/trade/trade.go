@@ -25,3 +25,24 @@ func CalculateExpectedReturn(path models.TransactionPath, pairsPtr *models.Pairs
 
 	return result
 }
+
+// GetSimplePath() transforms a TransactionPath into a simpler string representation,
+// where each string is formatted as "exchange:currency".
+func GetSimplePath(path models.TransactionPath) []string {
+	var simplePath []string
+
+	if len(path) == 0 {
+		return simplePath
+	}
+
+	for i, trade := range path {
+		simplePath = append(simplePath, fmt.Sprintf("%s:%s", trade.From.Exchange, trade.From.Currency))
+
+		// if it's the last trade in the path, also add the 'To' asset
+		if i == len(path)-1 {
+			simplePath = append(simplePath, fmt.Sprintf("%s:%s", trade.To.Exchange, trade.To.Currency))
+		}
+	}
+
+	return simplePath
+}
