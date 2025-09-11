@@ -33,8 +33,8 @@ func validateExchanges(exchanges []string) error {
 		slog.Error(err.Error())
 		return err
 	}
-	supportedExchanges := []string{}
 
+	supportedExchanges := []string{}
 	requiredFunctions := []string{
 		"fetchCurrencies",
 		"fetchMarkets",
@@ -49,20 +49,20 @@ func validateExchanges(exchanges []string) error {
 		exchange := ccxt.CreateExchange(exchangeID, nil)
 		has := exchange.GetHas()
 
-		isSupported := false
+		// assume all functions are supported until proven otherwise.
+		allFunctionsSupported := true
 		for _, capability := range requiredFunctions {
-			if has[capability] == true || has[capability] == "emulated" {
-				isSupported = true
+			if has[capability] != true && has[capability] != "emulated" {
+				allFunctionsSupported = false
 				break
 			}
 		}
 
-		if isSupported {
+		if allFunctionsSupported {
 			supportedExchanges = append(supportedExchanges, exchangeID)
 		}
 	}
 
-	// uses a reusable function
 	invalidExchanges := findMissingItems(exchanges, supportedExchanges)
 
 	if len(invalidExchanges) > 0 {
