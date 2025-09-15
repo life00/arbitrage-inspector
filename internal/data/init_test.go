@@ -175,23 +175,21 @@ func TestValidateCurrencies(t *testing.T) {
 	}
 }
 
-func TestCreateData(t *testing.T) {
+func TestCreateExchanges(t *testing.T) {
 	testExchangeA := &TestExchange{
 		Name: "exchangeA",
 		Currencies: []ccxt.Currency{
 			newMockCurrency("BTC"),
 			newMockCurrency("ETH"),
 			newMockCurrency("USDT"),
-			func() ccxt.Currency {
-				id, active := "XRP", false
-				return ccxt.Currency{Id: &id, Active: &active}
-			}(),
+			// Inactive currency
+			{Code: newString("XRP"), Active: newBool(false)},
 		},
 		Markets: []ccxt.MarketInterface{
 			newMockMarket("BTC/USDT", "BTC", "USDT", true, true),
-			newMockMarket("ETH/DAI", "ETH", "DAI", true, true),
-			newMockMarket("XRP/USDT", "XRP", "USDT", false, true),
-			newMockMarket("LTC/USDT", "LTC", "USDT", true, false),
+			newMockMarket("ETH/DAI", "ETH", "DAI", true, true),    // Invalid: DAI not in currencies
+			newMockMarket("XRP/USDT", "XRP", "USDT", true, true),  // Invalid: XRP is inactive
+			newMockMarket("LTC/USDT", "LTC", "USDT", true, false), // Invalid: not a spot market
 		},
 	}
 	testExchangeB := &TestExchange{
@@ -208,15 +206,18 @@ func TestCreateData(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name           string
-		testCurrencies []string
-		testClients    *models.Clients
-		want           models.Exchanges
+		name        string
+		testConfig  models.Config
+		testClients *models.Clients
+		want        models.Exchanges
 	}{
 		{
-			name:           "processes two exchanges concurrently",
-			testCurrencies: []string{"BTC", "USDT", "ADA"},
-			testClients:    &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
+			name: "processes two exchanges concurrently with specified currencies",
+			testConfig: models.Config{
+				CurrencyInputMode: models.SpecifiedCurrencies,
+				Currencies:        []string{"BTC", "USDT", "ADA"},
+			},
+			testClients: &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
 			want: models.Exchanges{
 				"exchangeA": {
 					Id:         "exchangeA",
@@ -231,21 +232,49 @@ func TestCreateData(t *testing.T) {
 			},
 		},
 		{
-			name:           "handles no clients",
-			testCurrencies: []string{"BTC", "USDT"},
-			testClients:    &models.Clients{},
-			want:           models.Exchanges{},
+			name: "processes exchanges with all currencies mode",
+			testConfig: models.Config{
+				CurrencyInputMode: models.AllCurrencies,
+			},
+			testClients: &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
+			want: models.Exchanges{
+				"exchangeA": {
+					Id:         "exchangeA",
+					Markets:    map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "ETH": {Id: "ETH"}, "USDT": {Id: "USDT"}},
+				},
+				"exchangeB": {
+					Id:         "exchangeB",
+					Markets:    map[string]models.Market{"ADA/USDT": {Id: "ADA/USDT", Base: "ADA", Quote: "USDT"}, "BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}, "ADA": {Id: "ADA"}},
+				},
+			},
 		},
 		{
-			name:           "handles nil clients pointer",
-			testCurrencies: []string{"BTC", "USDT"},
-			testClients:    nil,
-			want:           models.Exchanges{},
+			name: "handles no clients",
+			testConfig: models.Config{
+				CurrencyInputMode: models.SpecifiedCurrencies,
+				Currencies:        []string{"BTC", "USDT"},
+			},
+			testClients: &models.Clients{},
+			want:        models.Exchanges{},
 		},
 		{
-			name:           "handles no input currencies",
-			testCurrencies: []string{},
-			testClients:    &models.Clients{"exchangeA": testExchangeA},
+			name: "handles nil clients pointer",
+			testConfig: models.Config{
+				CurrencyInputMode: models.SpecifiedCurrencies,
+				Currencies:        []string{"BTC", "USDT"},
+			},
+			testClients: nil,
+			want:        models.Exchanges{},
+		},
+		{
+			name: "handles no specified currencies",
+			testConfig: models.Config{
+				CurrencyInputMode: models.SpecifiedCurrencies,
+				Currencies:        []string{},
+			},
+			testClients: &models.Clients{"exchangeA": testExchangeA},
 			want: models.Exchanges{
 				"exchangeA": {
 					Id:         "exchangeA",
@@ -258,7 +287,7 @@ func TestCreateData(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := createExchanges(tc.testCurrencies, tc.testClients)
+			got := createExchanges(tc.testConfig, tc.testClients)
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Errorf("createExchanges() = %+v, want %+v", got, tc.want)
 			}
