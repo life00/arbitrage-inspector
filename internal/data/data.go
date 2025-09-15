@@ -40,6 +40,7 @@ func createExchanges(config models.Config, clientsPtr *models.Clients) models.Ex
 	}
 	slog.Info("creating data structure...")
 
+	// these common maps are created and passed to the function here to avoid redundant processing inside of createExchange
 	currencySet := make(map[string]struct{}) // can be nil
 
 	if config.CurrencyInputMode == models.SpecifiedCurrencies {
@@ -48,13 +49,18 @@ func createExchanges(config models.Config, clientsPtr *models.Clients) models.Ex
 		}
 	}
 
+	excludedCurrencySet := make(map[string]struct{})
+	for _, c := range config.ExcludedCurrencies {
+		excludedCurrencySet[c] = struct{}{}
+	}
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	exchanges := make(models.Exchanges)
 
 	for _, client := range *clientsPtr {
 		wg.Add(1)
-		go createExchange(&client, config.CurrencyInputMode, currencySet, &wg, &mu, exchanges)
+		go createExchange(&client, config.CurrencyInputMode, currencySet, excludedCurrencySet, &wg, &mu, exchanges)
 	}
 
 	wg.Wait()

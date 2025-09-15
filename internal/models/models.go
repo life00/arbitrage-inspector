@@ -16,11 +16,12 @@ const (
 )
 
 type Config struct {
-	Exchanges         []string
-	CurrencyInputMode CurrencyInputMode
-	Currencies        []string
-	Capital           decimal.Decimal
-	SourceAsset       AssetKey
+	Exchanges          []string
+	CurrencyInputMode  CurrencyInputMode
+	Currencies         []string
+	ExcludedCurrencies []string
+	Capital            decimal.Decimal
+	SourceAsset        AssetKey
 }
 
 type Clients map[string]ccxt.IExchange

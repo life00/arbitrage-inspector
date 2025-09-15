@@ -206,6 +206,7 @@ func createExchange(
 	clientPtr *ccxt.IExchange,
 	currencyInputMode models.CurrencyInputMode,
 	currencySet map[string]struct{}, // can be nil if currencyInputMode = models.SpecifiedCurrencies
+	excludedCurrencySet map[string]struct{},
 	wg *sync.WaitGroup,
 	mu *sync.Mutex,
 	exchanges models.Exchanges,
@@ -219,7 +220,7 @@ func createExchange(
 		Currencies: make(map[string]models.Currency),
 	}
 
-	exchange.Currencies = createCurrencies(clientPtr, currencyInputMode, currencySet)
+	exchange.Currencies = createCurrencies(clientPtr, currencyInputMode, currencySet, excludedCurrencySet)
 	exchange.Markets = createMarkets(clientPtr, exchange.Currencies)
 
 	mu.Lock()
@@ -263,7 +264,7 @@ func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Curre
 }
 
 // createCurrencies gets initial data and creates a Currencies object.
-func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.CurrencyInputMode, currencySet map[string]struct{}) map[string]models.Currency {
+func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.CurrencyInputMode, currencySet map[string]struct{}, excludedCurrencySet map[string]struct{}) map[string]models.Currency {
 	client := *clientPtr
 
 	currenciesMap := make(map[string]models.Currency)
@@ -305,6 +306,11 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.Curren
 			}
 		}
 
+	}
+
+	// delete all currencies which should be excluded
+	for currencyId := range excludedCurrencySet {
+		delete(currenciesMap, currencyId)
 	}
 
 	return currenciesMap

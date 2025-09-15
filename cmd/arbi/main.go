@@ -59,6 +59,11 @@ func main() {
 			"LTC",
 			"XMR",
 		},
+		ExcludedCurrencies: []string{
+			// problematic currency codes
+			"NEIRO",
+			"BROCCOLI",
+		},
 	}
 
 	// 1. Data retrieval using data.go, exchange.go

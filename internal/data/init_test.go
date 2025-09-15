@@ -251,6 +251,26 @@ func TestCreateExchanges(t *testing.T) {
 			},
 		},
 		{
+			name: "processes exchanges and excludes specified currencies",
+			testConfig: models.Config{
+				CurrencyInputMode:  models.AllCurrencies,
+				ExcludedCurrencies: []string{"USDT", "ADA"},
+			},
+			testClients: &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
+			want: models.Exchanges{
+				"exchangeA": {
+					Id:         "exchangeA",
+					Markets:    map[string]models.Market{},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "ETH": {Id: "ETH"}},
+				},
+				"exchangeB": {
+					Id:         "exchangeB",
+					Markets:    map[string]models.Market{},
+					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}},
+				},
+			},
+		},
+		{
 			name: "handles no clients",
 			testConfig: models.Config{
 				CurrencyInputMode: models.SpecifiedCurrencies,
@@ -287,6 +307,8 @@ func TestCreateExchanges(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// This assumes you have updated createExchanges to handle the config.ExcludedCurrencies
+			// field and pass it down to createExchange.
 			got := createExchanges(tc.testConfig, tc.testClients)
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Errorf("createExchanges() = %+v, want %+v", got, tc.want)
