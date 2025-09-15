@@ -1,27 +1,23 @@
-- [ ] **evaluate the performance, is it fast enough for real-time trading?**
+- [ ] **evaluate the performance, is it fast enough for real-time trading to minimize price slippage risk?**
 - client
   - ...
 - data
   - [ ] unified network names
     - `exchange.options['networks']{'UNIFIED_KEY': 'ID'}`
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
-  - [x] make all network names upper case for consistency
-  - [ ] create functionality to automatically generate currencies if no currencies are provided
-    - figure out the criteria for currency selection
-  - [ ] **find assets which maximize the chance of arbitrage**
+  - [ ] **ensure that markets have enough liquidity**
+  - [ ] implement random currency selection option
+    - figure out the criteria for optimal currency selection
+  - [ ] maximize arbitrage return
     - it likely requires arbitrage to have >0.1% deviation of prices to fully cover taker fees
       - estimate the necessary price deviation for a feasible arbitrage opportunity
     - or consider **how to reduce the fees?** use maker fees? find exchanges with exclusive cheaper fees?
-    - I need to make a cryptocurrency conversion network as large as possible (with as many assets and exchanges as possible), and run the algorithm on it for a while to see if there is any occurrence of arbitrage with fees
-  - [ ] create functionality to exclude specific currencies
 - arbitrage
-  - [x] implement CreateAssetPairs()
-  - [x] implement tests for CreateAssetPairs()
-  - [x] implement graph library
   - [ ] **refactor FindArbitrage() to handle arbitrage cycles which do not have any of the source assets inside of them**
     - if none of the source assets are in the arbitrage cycle, it must determine the cheapest path from the source assets (multi-source node) to the cheapest arbitrage cycle starting node, and back to the source assets (multi-source node). Then it evaluates whether it is still profitable, if yes then it returns the overall path, otherwise no arbitrage is found.
     - check the TODO and NOTE **comments in the code**
     - <https://gemini.google.com/share/3b791fab58c1>
   - [ ] implement tests for `bellman_ford.go` (once it is finalized)
 - trade
+  - [ ] implement safe fallback if transaction fails for whatever reason
   - ...
