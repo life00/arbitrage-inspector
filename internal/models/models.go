@@ -7,6 +7,20 @@ import (
 	"github.com/govalues/decimal"
 )
 
+type Config struct {
+	Exchanges         []string
+	CurrencyInputMode CurrencyInputMode
+	Currencies        []string
+}
+
+type CurrencyInputMode int
+
+const (
+	AllCurrencies CurrencyInputMode = iota
+	SpecifiedCurrencies
+	RandomCurrencies
+)
+
 type Clients map[string]ccxt.IExchange
 
 type Exchanges map[string]Exchange

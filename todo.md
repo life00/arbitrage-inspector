@@ -13,6 +13,7 @@
       - estimate the necessary price deviation for a feasible arbitrage opportunity
     - or consider **how to reduce the fees?** use maker fees? find exchanges with exclusive cheaper fees?
     - I need to make a cryptocurrency conversion network as large as possible (with as many assets and exchanges as possible), and run the algorithm on it for a while to see if there is any occurrence of arbitrage with fees
+  - [ ] create functionality to exclude specific currencies
 - arbitrage
   - [x] implement CreateAssetPairs()
   - [x] implement tests for CreateAssetPairs()

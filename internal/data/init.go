@@ -204,7 +204,8 @@ func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 // createExchange handles the logic for a single CCXT exchange client.
 func createExchange(
 	clientPtr *ccxt.IExchange,
-	currencySet map[string]struct{},
+	currencyInputMode models.CurrencyInputMode,
+	currencySet map[string]struct{}, // can be nil if currencyInputMode = models.SpecifiedCurrencies
 	wg *sync.WaitGroup,
 	mu *sync.Mutex,
 	exchanges models.Exchanges,
@@ -218,7 +219,7 @@ func createExchange(
 		Currencies: make(map[string]models.Currency),
 	}
 
-	exchange.Currencies = createCurrencies(clientPtr, currencySet)
+	exchange.Currencies = createCurrencies(clientPtr, currencyInputMode, currencySet)
 	exchange.Markets = createMarkets(clientPtr, exchange.Currencies)
 
 	mu.Lock()
@@ -262,27 +263,48 @@ func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Curre
 }
 
 // createCurrencies gets initial data and creates a Currencies object.
-func createCurrencies(clientPtr *ccxt.IExchange, currencySet map[string]struct{}) map[string]models.Currency {
+func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.CurrencyInputMode, currencySet map[string]struct{}) map[string]models.Currency {
 	client := *clientPtr
 
 	currenciesMap := make(map[string]models.Currency)
 
-	apiCurrenciesMap := make(map[string]ccxt.Currency)
-	for _, c := range client.GetCurrenciesList() {
-		if c.Code != nil {
-			apiCurrenciesMap[*c.Code] = c
-		}
-	}
+	switch currencyInputMode {
+	case models.SpecifiedCurrencies:
 
-	for currencyId := range currencySet {
-		if c, exists := apiCurrenciesMap[currencyId]; exists {
-			// check all currency conditions
-			if c.Active != nil && *c.Active &&
-				c.Deposit != nil && *c.Deposit &&
-				c.Withdraw != nil && *c.Withdraw {
-				currenciesMap[currencyId] = models.Currency{Id: currencyId}
+		apiCurrenciesMap := make(map[string]ccxt.Currency)
+		for _, c := range client.GetCurrenciesList() {
+			if c.Code != nil {
+				apiCurrenciesMap[*c.Code] = c
 			}
 		}
+
+		for currencyId := range currencySet {
+			if c, exists := apiCurrenciesMap[currencyId]; exists {
+				// check all currency conditions
+				if c.Active != nil && *c.Active &&
+					c.Deposit != nil && *c.Deposit &&
+					c.Withdraw != nil && *c.Withdraw {
+					currenciesMap[currencyId] = models.Currency{Id: currencyId}
+				}
+			}
+		}
+
+	case models.RandomCurrencies:
+
+		// TODO:
+
+	default: // models.AllCurrencies
+
+		for _, c := range client.GetCurrenciesList() {
+			// check all currency conditions
+			if c.Code != nil &&
+				c.Active != nil && *c.Active &&
+				c.Deposit != nil && *c.Deposit &&
+				c.Withdraw != nil && *c.Withdraw {
+				currenciesMap[*c.Code] = models.Currency{Id: *c.Code}
+			}
+		}
+
 	}
 
 	return currenciesMap

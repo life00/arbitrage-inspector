@@ -9,38 +9,43 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func validateInput(exchanges []string, currencies []string) (models.Clients, error) {
+func validateInput(config models.Config) (models.Clients, error) {
 	slog.Info("validating inputs...")
 	slog.Debug("validating exchanges...")
-	err := validateExchanges(exchanges)
+	err := validateExchanges(config.Exchanges)
 	if err != nil {
 		return nil, err
 	}
 	slog.Debug("initializing ccxt...")
-	clients, err := loadClient(exchanges)
+	clients, err := loadClient(config.Exchanges)
 	if err != nil {
 		return nil, err
 	}
 
-	slog.Debug("validating currencies...")
-	err = validateCurrencies(currencies, &clients)
-	if err != nil {
-		return nil, err
+	if config.CurrencyInputMode == models.SpecifiedCurrencies {
+		slog.Debug("validating currencies...")
+		err = validateCurrencies(config.Currencies, &clients)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return clients, nil
 }
 
 // createExchanges orchestrates the concurrent processing of exchange clients
-func createExchanges(currencies []string, clientsPtr *models.Clients) models.Exchanges {
+func createExchanges(config models.Config, clientsPtr *models.Clients) models.Exchanges {
 	if clientsPtr == nil || len(*clientsPtr) == 0 {
 		return models.Exchanges{}
 	}
 	slog.Info("creating data structure...")
 
-	currencySet := make(map[string]struct{})
-	for _, c := range currencies {
-		currencySet[c] = struct{}{}
+	currencySet := make(map[string]struct{}) // can be nil
+
+	if config.CurrencyInputMode == models.SpecifiedCurrencies {
+		for _, c := range config.Currencies {
+			currencySet[c] = struct{}{}
+		}
 	}
 
 	var wg sync.WaitGroup
@@ -49,21 +54,21 @@ func createExchanges(currencies []string, clientsPtr *models.Clients) models.Exc
 
 	for _, client := range *clientsPtr {
 		wg.Add(1)
-		go createExchange(&client, currencySet, &wg, &mu, exchanges)
+		go createExchange(&client, config.CurrencyInputMode, currencySet, &wg, &mu, exchanges)
 	}
 
 	wg.Wait()
 	return exchanges
 }
 
-func InitializeExchanges(inputExchanges []string, inputCurrencies []string) (models.Exchanges, models.Clients, error) {
+func InitializeExchanges(config models.Config) (models.Exchanges, models.Clients, error) {
 	slog.Info("initializing data...")
-	clients, err := validateInput(inputExchanges, inputCurrencies)
+	clients, err := validateInput(config)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	exchanges := createExchanges(inputCurrencies, &clients)
+	exchanges := createExchanges(config, &clients)
 
 	return exchanges, clients, nil
 }

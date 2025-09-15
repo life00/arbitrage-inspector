@@ -38,29 +38,32 @@ func main() {
 
 	// TODO: Parse cli arguments and define inputs
 
-	inputExchanges := []string{
-		"binance",
-		"kucoin",
-		"bitget",
-		// "htx",
-		// "coinbase",
-	}
-	inputCurrencies := []string{
-		"BTC",
-		"ETH",
-		"USDC",
-		"DOGE",
-		"SOL",
-		"BNB",
-		"USDT",
-		"BCH",
-		"LTC",
-		"XMR",
+	config := models.Config{
+		Exchanges: []string{
+			"binance",
+			"kucoin",
+			"bitget",
+			// "htx",
+			// "coinbase",
+		},
+		CurrencyInputMode: models.AllCurrencies,
+		Currencies: []string{
+			"BTC",
+			"ETH",
+			"USDC",
+			"DOGE",
+			"SOL",
+			"BNB",
+			"USDT",
+			"BCH",
+			"LTC",
+			"XMR",
+		},
 	}
 
 	// 1. Data retrieval using data.go, exchange.go
 	// 1.1. Validating and transforming the inputs; initializing the library
-	exchanges, clients, err := data.InitializeExchanges(inputExchanges, inputCurrencies)
+	exchanges, clients, err := data.InitializeExchanges(config)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
