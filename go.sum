@@ -6,6 +6,8 @@ github.com/bits-and-blooms/bitset v1.24.0 h1:H4x4TuulnokZKvHLfzVRTHJfFfnHEeSYJiz
 github.com/bits-and-blooms/bitset v1.24.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/ccxt/ccxt/go/v4 v4.5.3 h1:siVWoY67kivfonr965XUEwjurcG/iFGNcidFj068G8A=
 github.com/ccxt/ccxt/go/v4 v4.5.3/go.mod h1:ETpkNrx3xgVWN7/zbcG2M/BJLb4Qmtd8v7SDwMC3MM0=
+github.com/ccxt/ccxt/go/v4 v4.5.4 h1:h1aN+eistvo7pvVw7aRiwd2i4l99HYNAsF0lN5iRE10=
+github.com/ccxt/ccxt/go/v4 v4.5.4/go.mod h1:ETpkNrx3xgVWN7/zbcG2M/BJLb4Qmtd8v7SDwMC3MM0=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/consensys/gnark-crypto v0.19.0 h1:zXCqeY2txSaMl6G5wFpZzMWJU9HPNh8qxPnYJ1BL9vA=
