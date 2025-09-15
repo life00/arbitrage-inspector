@@ -7,12 +7,6 @@ import (
 	"github.com/govalues/decimal"
 )
 
-type Config struct {
-	Exchanges         []string
-	CurrencyInputMode CurrencyInputMode
-	Currencies        []string
-}
-
 type CurrencyInputMode int
 
 const (
@@ -20,6 +14,14 @@ const (
 	SpecifiedCurrencies
 	RandomCurrencies
 )
+
+type Config struct {
+	Exchanges         []string
+	CurrencyInputMode CurrencyInputMode
+	Currencies        []string
+	Capital           decimal.Decimal
+	SourceAsset       AssetKey
+}
 
 type Clients map[string]ccxt.IExchange
 

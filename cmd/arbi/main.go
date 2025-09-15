@@ -88,13 +88,13 @@ func main() {
 	// 2. Arbitrage identification using arbitrage.go
 	// 2.1. Transforming data
 
-	capital, err := decimal.NewFromFloat64(1000000)
+	config.Capital, err = decimal.NewFromFloat64(1000000)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	pairs, assets, index := arbitrage.CreateAssetPairs(&exchanges, capital)
+	pairs, assets, index := arbitrage.CreateAssetPairs(&exchanges, config.Capital)
 
 	type SerializedPair struct {
 		Key   models.PairKey
@@ -110,9 +110,9 @@ func main() {
 	saveAnyJson(serializedPairs, "/home/user/dev/src/arbitrage/pairs.json")
 
 	// 2.2. Bellman-Ford algorithm negative cycle detection
-	sourceAsset := models.AssetKey{Exchange: "binance", Currency: "USDC"}
+	config.SourceAsset = models.AssetKey{Exchange: "binance", Currency: "USDC"}
 
-	path := arbitrage.FindArbitrage(&pairs, &assets, &index, sourceAsset)
+	path := arbitrage.FindArbitrage(&pairs, &assets, &index, config.SourceAsset)
 
 	if path == nil {
 		slog.Info("no arbitrage opportunity found")
@@ -131,15 +131,15 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		pairs, assets, index = arbitrage.CreateAssetPairs(&exchanges, capital)
-		path = arbitrage.FindArbitrage(&pairs, &assets, &index, sourceAsset)
+		pairs, assets, index = arbitrage.CreateAssetPairs(&exchanges, config.Capital)
+		path = arbitrage.FindArbitrage(&pairs, &assets, &index, config.SourceAsset)
 
 		if path == nil {
 			slog.Info("no arbitrage opportunity found")
 		} else {
 			expectedReturn := trade.CalculateExpectedReturn(path, &pairs)
 
-			slog.Info("arbitrage opportunity found", "path", trade.GetSimplePath(path), "expectedReturn", expectedReturn)
+			slog.Info("arbitrage opportunity found", "path", trade.GetSimplePath(path), "expectedReturn", expectedReturn, "lenPairs", len(pairs), "lenAssets", len(assets))
 		}
 
 	}
