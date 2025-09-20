@@ -22,6 +22,7 @@ type Config struct {
 	ExcludedCurrencies []string
 	Capital            decimal.Decimal
 	SourceAsset        AssetKey
+	// SourceAssets       []AssetKey
 }
 
 type Clients map[string]ccxt.IExchange
@@ -87,3 +88,13 @@ type PairKey struct {
 type Pairs map[PairKey]Pair
 
 type TransactionPath []PairKey
+
+// // ArbitragePath is a complete representation of an arbitrage path
+// // ToCycle describes the cheapest/shortest path from the optimal asset in SourceAssets to the optimal cycle asset
+// // Cycle describes the arbitrage cycle loop of assets
+// // FromCycle describes the cheapest/shortest path from the optimal cycle asset to the optimal asset in SourceAssets
+// type ArbitragePath struct {
+// 	ToCycle   TransactionPath
+// 	Cycle     TransactionPath
+// 	FromCycle TransactionPath
+// }
