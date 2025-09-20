@@ -2,6 +2,8 @@
 - client
   - ...
 - data
+  - [ ] **createInterExchangePairs doesn't apply the constant fee correctly**
+    - the fee is constant, therefore in order to get the conversion rate for the network it's necessary to convert the original capital into that currency, and calculate the ratio
   - [ ] unified network names
     - `exchange.options['networks']{'UNIFIED_KEY': 'ID'}`
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
