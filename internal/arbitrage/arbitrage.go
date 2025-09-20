@@ -28,6 +28,10 @@ func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (
 }
 
 func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.Assets, indexPtr *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
+	if len(*assetsPtr) == 0 {
+		return nil
+	}
+
 	slog.Info("finding arbitrage path...")
 
 	assets := *assetsPtr
