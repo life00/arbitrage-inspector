@@ -113,7 +113,7 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 	testCases := []struct {
 		name          string
 		exchangesPtr  *models.Exchanges
-		assetsPtr     *models.Assets
+		assetsPtr     *models.AssetIndexes
 		expectedPairs models.Pairs
 	}{
 		{
@@ -143,10 +143,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 					},
 				},
 			},
-			assetsPtr: &models.Assets{
-				models.AssetKey{Exchange: "binance", Currency: "BTC"}:  models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-				models.AssetKey{Exchange: "binance", Currency: "USDC"}: models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-				models.AssetKey{Exchange: "binance", Currency: "ETH"}:  models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
+			assetsPtr: &models.AssetIndexes{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+				models.AssetKey{Exchange: "binance", Currency: "USDC"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+				models.AssetKey{Exchange: "binance", Currency: "ETH"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 2},
 			},
 			expectedPairs: models.Pairs{
 				models.PairKey{
@@ -155,8 +155,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "BTC/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-					To:            models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
 					Weight:        decimal.MustNew(11053535400, 5), // 110646.00 * (1 - 0.001)
 					Side:          "sell",
 				},
@@ -166,8 +166,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "BTC/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
 					Weight:        decimal.MustNew(90287937179117, 19), // (1/110646.01) * (1 - 0.001)
 					Side:          "buy",
 				},
@@ -177,8 +177,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "ETH/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
-					To:            models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 2},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
 					Weight:        decimal.MustNew(428870700, 5), // 4293.00 * (1 - 0.001)
 					Side:          "sell",
 				},
@@ -188,8 +188,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "ETH/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-					To:            models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 2},
 					Weight:        decimal.MustNew(2327038604615410, 19), // (1/4293.01) * (1 - 0.001)
 					Side:          "buy",
 				},
@@ -227,11 +227,11 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 					},
 				},
 			},
-			assetsPtr: &models.Assets{
-				models.AssetKey{Exchange: "binance", Currency: "BTC"}:  models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-				models.AssetKey{Exchange: "binance", Currency: "USDC"}: models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-				models.AssetKey{Exchange: "kucoin", Currency: "ETH"}:   models.Asset{Exchange: "kucoin", Currency: "ETH", Index: 2},
-				models.AssetKey{Exchange: "kucoin", Currency: "USDC"}:  models.Asset{Exchange: "kucoin", Currency: "USDC", Index: 3},
+			assetsPtr: &models.AssetIndexes{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+				models.AssetKey{Exchange: "binance", Currency: "USDC"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+				models.AssetKey{Exchange: "kucoin", Currency: "ETH"}:   models.AssetIndex{Asset: models.AssetKey{Exchange: "kucoin", Currency: "ETH"}, Index: 2},
+				models.AssetKey{Exchange: "kucoin", Currency: "USDC"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "kucoin", Currency: "USDC"}, Index: 3},
 			},
 			expectedPairs: models.Pairs{
 				models.PairKey{
@@ -240,8 +240,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "BTC/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-					To:            models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
 					Weight:        decimal.MustNew(11053535400, 5),
 					Side:          "sell",
 				},
@@ -251,8 +251,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "BTC/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
 					Weight:        decimal.MustNew(90287937179117, 19),
 					Side:          "buy",
 				},
@@ -262,8 +262,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "ETH/USDC",
-					From:          models.Asset{Exchange: "kucoin", Currency: "ETH", Index: 2},
-					To:            models.Asset{Exchange: "kucoin", Currency: "USDC", Index: 3},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "kucoin", Currency: "ETH"}, Index: 2},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "kucoin", Currency: "USDC"}, Index: 3},
 					Weight:        decimal.MustNew(428903667, 5), // 4293.33 * (1 - 0.001)
 					Side:          "sell",
 				},
@@ -273,8 +273,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "ETH/USDC",
-					From:          models.Asset{Exchange: "kucoin", Currency: "USDC", Index: 3},
-					To:            models.Asset{Exchange: "kucoin", Currency: "ETH", Index: 2},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "kucoin", Currency: "USDC"}, Index: 3},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "kucoin", Currency: "ETH"}, Index: 2},
 					Weight:        decimal.MustNew(2326859740901023, 19), // (1/4293.34) * (1 - 0.001)
 					Side:          "buy",
 				},
@@ -283,7 +283,7 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 		{
 			name:          "empty exchanges",
 			exchangesPtr:  &models.Exchanges{},
-			assetsPtr:     &models.Assets{},
+			assetsPtr:     &models.AssetIndexes{},
 			expectedPairs: models.Pairs{},
 		},
 		{
@@ -313,10 +313,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 					},
 				},
 			},
-			assetsPtr: &models.Assets{
-				models.AssetKey{Exchange: "binance", Currency: "BTC"}:  models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-				models.AssetKey{Exchange: "binance", Currency: "USDC"}: models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-				models.AssetKey{Exchange: "binance", Currency: "ETH"}:  models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
+			assetsPtr: &models.AssetIndexes{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+				models.AssetKey{Exchange: "binance", Currency: "USDC"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+				models.AssetKey{Exchange: "binance", Currency: "ETH"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 2},
 			},
 			expectedPairs: models.Pairs{
 				models.PairKey{
@@ -325,8 +325,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "BTC/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
-					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
 					Weight:        decimal.MustNew(90287937179117, 19),
 					Side:          "buy",
 				},
@@ -336,8 +336,8 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 				}: models.Pair{
 					IntraExchange: true,
 					Symbol:        "ETH/USDC",
-					From:          models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
-					To:            models.Asset{Exchange: "binance", Currency: "USDC", Index: 1},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 2},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"}, Index: 1},
 					Weight:        decimal.MustNew(428870700, 5),
 					Side:          "sell",
 				},
@@ -354,8 +354,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 			if !maps.EqualFunc(gotPairs, tc.expectedPairs, func(a, b models.Pair) bool {
 				return a.IntraExchange == b.IntraExchange &&
 					a.Symbol == b.Symbol &&
-					a.From == b.From &&
-					a.To == b.To &&
+					a.From.Asset == b.From.Asset &&
+					a.From.Index == b.From.Index &&
+					a.To.Asset == b.To.Asset &&
+					a.To.Index == b.To.Index &&
 					a.Side == b.Side &&
 					a.Network == b.Network &&
 					a.Weight.Cmp(b.Weight) == 0
@@ -370,7 +372,7 @@ func TestCreateInterExchangePairs(t *testing.T) {
 	testCases := []struct {
 		name          string
 		exchangesPtr  *models.Exchanges
-		assetsPtr     *models.Assets
+		assetsPtr     *models.AssetIndexes
 		capital       decimal.Decimal
 		expectedPairs models.Pairs
 	}{
@@ -402,9 +404,9 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					},
 				},
 			},
-			assetsPtr: &models.Assets{
-				models.AssetKey{Exchange: "binance", Currency: "BTC"}: models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-				models.AssetKey{Exchange: "kraken", Currency: "BTC"}:  models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+			assetsPtr: &models.AssetIndexes{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+				models.AssetKey{Exchange: "kraken", Currency: "BTC"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "BTC"}, Index: 1},
 			},
 			capital: decimal.MustNew(1, 0), // 1 BTC
 			expectedPairs: models.Pairs{
@@ -413,8 +415,8 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					To:   models.AssetKey{Exchange: "kraken", Currency: "BTC"},
 				}: models.Pair{
 					IntraExchange: false,
-					From:          models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-					To:            models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "BTC"}, Index: 1},
 					Weight:        decimal.MustNew(99995, 5), // (1 - 0.00005) / 1
 					Network:       "BTC",
 				},
@@ -423,8 +425,8 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					To:   models.AssetKey{Exchange: "binance", Currency: "BTC"},
 				}: models.Pair{
 					IntraExchange: false,
-					From:          models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
-					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "BTC"}, Index: 1},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
 					Weight:        decimal.MustNew(99995, 5), // (1 - 0.00005) / 1
 					Network:       "BTC",
 				},
@@ -456,9 +458,9 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					},
 				},
 			},
-			assetsPtr: &models.Assets{
-				models.AssetKey{Exchange: "binance", Currency: "ETH"}: models.Asset{Exchange: "binance", Currency: "ETH", Index: 0},
-				models.AssetKey{Exchange: "kraken", Currency: "ETH"}:  models.Asset{Exchange: "kraken", Currency: "ETH", Index: 1},
+			assetsPtr: &models.AssetIndexes{
+				models.AssetKey{Exchange: "binance", Currency: "ETH"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 0},
+				models.AssetKey{Exchange: "kraken", Currency: "ETH"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "ETH"}, Index: 1},
 			},
 			capital:       decimal.MustNew(1, 0),
 			expectedPairs: models.Pairs{},
@@ -466,7 +468,7 @@ func TestCreateInterExchangePairs(t *testing.T) {
 		{
 			name:          "empty exchanges",
 			exchangesPtr:  &models.Exchanges{},
-			assetsPtr:     &models.Assets{},
+			assetsPtr:     &models.AssetIndexes{},
 			capital:       decimal.MustNew(1, 0),
 			expectedPairs: models.Pairs{},
 		},
@@ -510,11 +512,11 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					},
 				},
 			},
-			assetsPtr: &models.Assets{
-				models.AssetKey{Exchange: "binance", Currency: "BTC"}: models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-				models.AssetKey{Exchange: "kraken", Currency: "BTC"}:  models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
-				models.AssetKey{Exchange: "binance", Currency: "ETH"}: models.Asset{Exchange: "binance", Currency: "ETH", Index: 2},
-				models.AssetKey{Exchange: "kraken", Currency: "ETH"}:  models.Asset{Exchange: "kraken", Currency: "ETH", Index: 3},
+			assetsPtr: &models.AssetIndexes{
+				models.AssetKey{Exchange: "binance", Currency: "BTC"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+				models.AssetKey{Exchange: "kraken", Currency: "BTC"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "BTC"}, Index: 1},
+				models.AssetKey{Exchange: "binance", Currency: "ETH"}: models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "ETH"}, Index: 2},
+				models.AssetKey{Exchange: "kraken", Currency: "ETH"}:  models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "ETH"}, Index: 3},
 			},
 			capital: decimal.MustNew(1, 0),
 			expectedPairs: models.Pairs{
@@ -523,8 +525,8 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					To:   models.AssetKey{Exchange: "kraken", Currency: "BTC"},
 				}: models.Pair{
 					IntraExchange: false,
-					From:          models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
-					To:            models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "BTC"}, Index: 1},
 					Weight:        decimal.MustNew(99995, 5), // (1 - 0.00005) / 1
 					Network:       "BTC",
 				},
@@ -533,8 +535,8 @@ func TestCreateInterExchangePairs(t *testing.T) {
 					To:   models.AssetKey{Exchange: "binance", Currency: "BTC"},
 				}: models.Pair{
 					IntraExchange: false,
-					From:          models.Asset{Exchange: "kraken", Currency: "BTC", Index: 1},
-					To:            models.Asset{Exchange: "binance", Currency: "BTC", Index: 0},
+					From:          models.AssetIndex{Asset: models.AssetKey{Exchange: "kraken", Currency: "BTC"}, Index: 1},
+					To:            models.AssetIndex{Asset: models.AssetKey{Exchange: "binance", Currency: "BTC"}, Index: 0},
 					Weight:        decimal.MustNew(99994, 5), // (1 - 0.00006) / 1
 					Network:       "BTC",
 				},
@@ -554,8 +556,10 @@ func TestCreateInterExchangePairs(t *testing.T) {
 			// compare the maps for equality.
 			if !maps.EqualFunc(gotPairs, tc.expectedPairs, func(a, b models.Pair) bool {
 				return a.IntraExchange == b.IntraExchange &&
-					a.From == b.From &&
-					a.To == b.To &&
+					a.From.Asset == b.From.Asset &&
+					a.From.Index == b.From.Index &&
+					a.To.Asset == b.To.Asset &&
+					a.To.Index == b.To.Index &&
 					a.Network == b.Network &&
 					a.Weight.Cmp(b.Weight) == 0
 			}) {

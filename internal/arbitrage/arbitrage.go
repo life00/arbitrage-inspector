@@ -8,7 +8,7 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (models.Pairs, models.Assets, models.Index) {
+func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (models.Pairs, models.AssetIndexes, models.Index) {
 	if exchangesPtr == nil || len(*exchangesPtr) == 0 {
 		slog.Warn("exchanges data is empty")
 		return nil, nil, nil
@@ -27,7 +27,7 @@ func CreateAssetPairs(exchangesPtr *models.Exchanges, capital decimal.Decimal) (
 	return pairs, assets, index
 }
 
-func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.Assets, indexPtr *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
+func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, indexPtr *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
 	if len(*assetsPtr) == 0 {
 		return nil
 	}

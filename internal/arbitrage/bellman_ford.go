@@ -22,7 +22,7 @@ func getEdges(pairsPtr *models.Pairs) []*Edge {
 	return edges
 }
 
-func getVertices(assetsPtr *models.Assets) []uint {
+func getVertices(assetsPtr *models.AssetIndexes) []uint {
 	length := len(*assetsPtr)
 	var vertices []uint
 

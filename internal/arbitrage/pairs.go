@@ -11,10 +11,10 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func createAssetIndex(exchangesPtr *models.Exchanges) (models.Assets, models.Index) {
+func createAssetIndex(exchangesPtr *models.Exchanges) (models.AssetIndexes, models.Index) {
 	slog.Debug("creating asset index map...")
 	var i uint
-	assets := make(models.Assets)
+	assets := make(models.AssetIndexes)
 	index := make(models.Index)
 	// looping through all possible currencies in all exchanges
 	for exchangeId, exchange := range *exchangesPtr {
@@ -23,10 +23,12 @@ func createAssetIndex(exchangesPtr *models.Exchanges) (models.Assets, models.Ind
 			assets[models.AssetKey{
 				Exchange: exchangeId,
 				Currency: currencyId,
-			}] = models.Asset{
-				Exchange: exchangeId,
-				Currency: currencyId,
-				Index:    i,
+			}] = models.AssetIndex{
+				Asset: models.AssetKey{
+					Exchange: exchangeId,
+					Currency: currencyId,
+				},
+				Index: i,
 			}
 			// creating index map
 			index[i] = models.AssetKey{
@@ -49,7 +51,7 @@ type exchangeMarket struct {
 // createIntraExchangePairs creates trading pairs within each exchange.
 // It calculates the total number of markets and distributes them across
 // multiple concurrent workers to process them in parallel.
-func createIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.Assets) models.Pairs {
+func createIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes) models.Pairs {
 	slog.Debug("creating intra-exchange pairs...")
 	exchanges := *exchangesPtr
 	allMarkets := make([]exchangeMarket, 0)
@@ -112,7 +114,7 @@ func createIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 
 // intraExchangePairWorker processes a slice of markets for a single exchange
 // and creates the corresponding trading pairs, applying the taker fee.
-func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.Assets) models.Pairs {
+func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.AssetIndexes) models.Pairs {
 	assets := *assetsPtr
 	pairs := make(models.Pairs)
 
@@ -195,7 +197,7 @@ type interExchangeCurrency struct {
 // createInterExchangePairs creates trading pairs across exchanges.
 // It calculates the total number of currencies and distributes them across
 // multiple concurrent workers to process them in parallel.
-func createInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.Assets, capital decimal.Decimal) models.Pairs {
+func createInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, capital decimal.Decimal) models.Pairs {
 	slog.Debug("creating inter-exchange pairs...")
 	exchanges := *exchangesPtr
 
@@ -266,7 +268,7 @@ func createInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 func interExchangePairWorker(
 	currencies []interExchangeCurrency,
 	exchangesPtr *models.Exchanges,
-	assetsPtr *models.Assets,
+	assetsPtr *models.AssetIndexes,
 	capital decimal.Decimal,
 ) models.Pairs {
 	exchanges := *exchangesPtr

@@ -55,10 +55,9 @@ type Market struct {
 	Timestamp time.Time
 }
 
-type Asset struct {
-	Exchange string
-	Currency string
-	Index    uint
+type AssetIndex struct {
+	Asset AssetKey
+	Index uint
 }
 
 type AssetKey struct {
@@ -66,15 +65,15 @@ type AssetKey struct {
 	Currency string
 }
 
-type Assets map[AssetKey]Asset
+type AssetIndexes map[AssetKey]AssetIndex
 
 type Index map[uint]AssetKey
 
 type Pair struct {
 	IntraExchange bool
 	Symbol        string
-	From          Asset
-	To            Asset
+	From          AssetIndex
+	To            AssetIndex
 	Weight        decimal.Decimal
 	Side          string // can be empty string, if inter-exchange
 	Network       string // can be empty string, if intra-exchange
