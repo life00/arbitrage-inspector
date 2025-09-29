@@ -1,4 +1,4 @@
-package arbitrage
+package engine
 
 import (
 	"reflect"

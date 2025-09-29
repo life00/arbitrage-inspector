@@ -20,9 +20,8 @@ type Config struct {
 	CurrencyInputMode  CurrencyInputMode
 	Currencies         []string
 	ExcludedCurrencies []string
-	Capital            decimal.Decimal
-	SourceAsset        AssetKey
-	// SourceAssets       []AssetKey
+	ReferenceAsset     AssetBalance
+	SourceAssets       map[AssetKey]AssetBalance
 }
 
 type Clients map[string]ccxt.IExchange
@@ -58,6 +57,11 @@ type Market struct {
 type AssetIndex struct {
 	Asset AssetKey
 	Index uint
+}
+
+type AssetBalance struct {
+	Asset   AssetKey
+	Balance decimal.Decimal
 }
 
 type AssetKey struct {
