@@ -1,3 +1,4 @@
+- [ ] ensure that the bid ask prices are correctly used
 - [ ] **evaluate the performance, is it fast enough for real-time trading to minimize price slippage risk?**
 - client
   - ...
