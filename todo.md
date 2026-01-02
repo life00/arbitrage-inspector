@@ -1,4 +1,3 @@
-- [ ] ensure that the bid ask prices are correctly used
 - [ ] **evaluate the performance, is it fast enough for real-time trading to minimize price slippage risk?**
 - client
   - ...
@@ -9,6 +8,7 @@
     - `exchange.options['networks']{'UNIFIED_KEY': 'ID'}`
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
   - [ ] **ensure that markets have enough liquidity**
+    - will be implemented by calculating effective exchange rate based on orderbook liquidity
   - [ ] implement random currency selection option
     - figure out the criteria for optimal currency selection
   - [ ] maximize arbitrage return

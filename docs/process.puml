@@ -1,0 +1,70 @@
+@startuml
+skinparam dpi 300
+scale 0.5
+
+
+|Initialization|
+
+:**client**\ndefine config;
+:**fetch**\ninitialize `exchanges`;
+:**transform**\ncreates asset index;
+
+|Periodic update|
+
+repeat
+repeat
+
+:**fetch**\nupdate all data in `exchanges`\n(prices, exchange & network fees);
+
+partition Balances {
+  :**transform**\ncreate nominal intra-exchange pairs\n(no fees);
+  :**transform**\ncreate nominal inter-exchange pairs\n(no fees);
+  :**engine**\nfind balances of all assets;
+
+  :**transform**\nupdate `config.SourceAssets`\nbalances;
+
+  :**trade**\nensure sufficient balances;
+}
+
+partition Inter pairs {
+  :**transform**\ncreate effective intra-exchange pairs\n(with regular bid/ask prices);
+  :**transform**\ncreate effective inter-exchange pairs\n(with ~1 USD network fees);
+  :**engine**\nfind balances of all assets;
+  :**transform**\ncreate actual effective inter-exchange pairs\n(using all asset balances);
+}
+
+
+|Continuous update|
+
+fork 
+    partition Client {
+      repeat
+      :**client**\nwait some time;
+      :**watch**\ncall watcher to update data;
+      :**transform**\ncreate actual effective\ninter-exchange pairs;
+      :**engine**\nsearch for (reasonable) arbitrage\nand find full ArbitragePath\n(from/to SourceAssets);
+      repeat while (**trade**\narbitrage is profitable?) is (false) not (true)
+    }
+fork again
+  partition Watcher {
+    :**watch**\ninitialize orderbook watcher\n(establish WS connections);
+    :**watch**\ncache all received orderbook data;
+    :**transform**\ncalculate effective prices\n(from orderbook data);
+    :**watch**\nupdate `exchange` data structure;
+  }
+end fork
+
+repeat while (wait(1 hour) && no arbitrage) is (true) not (false)
+
+|Trade|
+
+partition Verifier (WIP) {
+  :**fetch**\nfetch orderbook data of\nmarkets in ArbitragePath;
+  :**transform**\ncalculate effective prices;
+  :**trade**\ncheck if arbitrage\nis still profitable;
+}
+:**trade**\nTODO;
+
+repeat while (resynchronize) is (true)
+
+@enduml
