@@ -73,7 +73,7 @@ func TestCreateAssetIndex(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotAssets, gotIndex := createAssetIndex(&tc.testExchanges)
+			gotAssets, gotIndex := CreateAssetIndex(&tc.testExchanges)
 
 			var totalCurrencies int
 			for _, exchange := range tc.testExchanges {
@@ -347,7 +347,7 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotPairs := createIntraExchangePairs(tc.exchangesPtr, tc.assetsPtr)
+			gotPairs := CreateIntraExchangePairs(tc.exchangesPtr, tc.assetsPtr)
 
 			// the order of pairs in the map can be non-deterministic due to concurrent workers.
 			// compare the maps for equality.
@@ -546,7 +546,7 @@ func TestCreateInterExchangePairs(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotPairs := createInterExchangePairs(tc.exchangesPtr, tc.assetsPtr, tc.capital)
+			gotPairs := CreateInterExchangePairs(tc.exchangesPtr, tc.assetsPtr, tc.capital)
 
 			if len(gotPairs) != len(tc.expectedPairs) {
 				t.Fatalf("createInterExchangePairs() returned incorrect number of pairs. Got: %d, Want: %d", len(gotPairs), len(tc.expectedPairs))

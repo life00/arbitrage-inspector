@@ -3,23 +3,22 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
-	// "time"
+	"time"
 
 	"github.com/govalues/decimal"
-	// "github.com/joho/godotenv"
-	// "github.com/life00/arbitrage-inspector/internal/fetch"
+	"github.com/joho/godotenv"
+	"github.com/life00/arbitrage-inspector/internal/engine"
+	"github.com/life00/arbitrage-inspector/internal/fetch"
 	"github.com/life00/arbitrage-inspector/internal/models"
-	// "github.com/life00/arbitrage-inspector/internal/trade"
+	"github.com/life00/arbitrage-inspector/internal/trade"
 	"github.com/life00/arbitrage-inspector/internal/transform"
 	"github.com/lmittmann/tint"
 )
 
-// main.go must be minimal with high abstraction
-// all errors will be passed and handled here
-// logging will be done where appropriate
-
-func main() {
+// initialization step
+func initialization() (models.Config, models.Exchanges, models.Clients, models.AssetIndexes, models.Index, error) {
 	// setup a default logger
 	logger := slog.New(
 		tint.NewHandler(os.Stdout, &tint.Options{
@@ -30,77 +29,105 @@ func main() {
 	slog.SetDefault(logger)
 
 	// get the environment variables (API credentials)
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	slog.Error("failed to load .env file")
-	// 	os.Exit(1)
-	// }
+	err := godotenv.Load()
+	if err != nil {
+		slog.Error("failed to load .env file")
+		return models.Config{}, nil, nil, nil, nil, err
+	}
 
-	// TODO: Parse cli arguments and define inputs
+	// TODO: Parse cli arguments, config file, etc.
+	// and define the config structure
 
-	var config models.Config
+	config := models.Config{
+		Exchanges: []string{
+			"binance",
+			"kucoin",
+			"bitget",
+			// "htx",
+			// "coinbase",
+		},
+		CurrencyInputMode: models.AllCurrencies,
+		Currencies: []string{
+			"BTC",
+			"ETH",
+			"USDC",
+			"DOGE",
+			"SOL",
+			"BNB",
+			"USDT",
+			"BCH",
+			"LTC",
+			"XMR",
+		},
+		ExcludedCurrencies: []string{
+			// problematic currency codes
+			"NEIRO",
+			"BROCCOLI",
+		},
+	}
 
-	// config = models.Config{
-	// 	Exchanges: []string{
-	// 		"binance",
-	// 		"kucoin",
-	// 		"bitget",
-	// 		// "htx",
-	// 		// "coinbase",
-	// 	},
-	// 	CurrencyInputMode: models.AllCurrencies,
-	// 	Currencies: []string{
-	// 		"BTC",
-	// 		"ETH",
-	// 		"USDC",
-	// 		"DOGE",
-	// 		"SOL",
-	// 		"BNB",
-	// 		"USDT",
-	// 		"BCH",
-	// 		"LTC",
-	// 		"XMR",
-	// 	},
-	// 	ExcludedCurrencies: []string{
-	// 		// problematic currency codes
-	// 		"NEIRO",
-	// 		"BROCCOLI",
-	// 	},
-	// }
+	// initialization of exchanges data structure
+	exchanges, clients, err := fetch.InitializeExchanges(config)
+	if err != nil {
+		return models.Config{}, nil, nil, nil, nil, err
+	}
 
-	// 1. Data retrieval using data.go, exchange.go
-	// 1.1. Validating and transforming the inputs; initializing the library
-	// exchanges, clients, err := data.InitializeExchanges(config)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
+	// creation of asset index
+	assets, index := transform.CreateAssetIndex(&exchanges)
 
-	// 1.2. Fetching price data and fees
+	return config, exchanges, clients, assets, index, err
+}
 
-	// err = data.UpdateExchanges(&exchanges, &clients, true, true)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
+// periodic update step
+func periodicUpdate(
+	configPtr *models.Config,
+	exchangesPtr *models.Exchanges,
+	clientsPtr *models.Clients,
+	assetsPtr *models.AssetIndexes,
+	indexPtr *models.Index,
+) (models.Pairs, error) {
+	// update exchange data structure
+	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, true, true)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 	// saveAnyJson(exchanges, "/home/user/dev/src/arbitrage/exchanges.json")
-
 	// load data from cached exchanges.json
-	exchanges, err := loadAnyJson[models.Exchanges]("/home/user/dev/src/arbitrage/exchanges.json")
+	// exchanges, err := loadAnyJson[models.Exchanges]("/home/user/dev/src/arbitrage/exchanges.json")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+
+	// find balances of all assets
+	_, err = findAssetBalances(configPtr, exchangesPtr, clientsPtr, assetsPtr, indexPtr)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	// 2. Arbitrage identification using arbitrage.go
-	// 2.1. Transforming data
-
+	// create effective inter-exchange pairs
+	interPairs, err := createInterPairs(configPtr, exchangesPtr, assetsPtr, indexPtr)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	config = models.Config{
+	return interPairs, nil
+}
+
+// finds source asset balances
+func findAssetBalances(configPtr *models.Config, exchangesPtr *models.Exchanges, clientsPtr *models.Clients, assetsPtr *models.AssetIndexes, indexPtr *models.Index) (map[models.AssetKey]models.AssetBalance, error) {
+	// TODO:
+	// transform: create nominal intra-exchange pairs (no fees)
+	// transform: create nominal inter-exchange pairs (no fees)
+	// engine: find balances of all assets
+	// transform: config.SourceAssets balances
+	// trade: ensure sufficient balances
+
+	// FIXME: temporary solution
+	*configPtr = models.Config{
 		ReferenceAsset: models.AssetBalance{
 			Asset: models.AssetKey{
 				Exchange: "binance",
@@ -110,39 +137,74 @@ func main() {
 		},
 		SourceAssets: map[models.AssetKey]models.AssetBalance{
 			{Exchange: "binance", Currency: "USDC"}: {
-				Asset: models.AssetKey{Exchange: "binance", Currency: "USDC"},
-				// balance is not defined because it will be generated further
+				Asset:   models.AssetKey{Exchange: "binance", Currency: "USDC"},
+				Balance: decimal.MustNew(1000000, 0),
 			},
 			{Exchange: "kucoin", Currency: "USDC"}: {
-				Asset: models.AssetKey{Exchange: "kucoin", Currency: "USDC"},
+				Asset:   models.AssetKey{Exchange: "kucoin", Currency: "USDC"},
+				Balance: decimal.MustNew(1000000, 0),
 			},
 			{Exchange: "bitget", Currency: "USDC"}: {
-				Asset: models.AssetKey{Exchange: "bitget", Currency: "USDC"},
+				Asset:   models.AssetKey{Exchange: "bitget", Currency: "USDC"},
+				Balance: decimal.MustNew(1000000, 0),
 			},
 		},
 	}
 
-	config.SourceAssets = transform.FindAssetBalances(config, &exchanges)
+	return nil, nil
+}
 
-	// 1. initialize exchanges data structure & update it
-	// 2. figure out the balances of assets in SourceAssets data structure
-	// 2.1. create currency pairs without any fees
-	// 2.2. create a nominal graph
-	// 2.3. run bellman-ford
-	// 2.4. use resulting weights to convert nominal value of reference asset to all source assets
-	// 3. create intra-exchange pairs
-	// 4. create inter-exchange pairs
-	// 4.1. use previously created intra pairs and create inter pairs with a  constant 1-2 USD for all fees (whenever the destination currency is on a different exchange than the reference currency), it is used to roughly estimate real balances in all currencies
-	// 4.2. create a graph for balance estimation
-	// 4.3. run bellman-ford
-	// 4.4. use the resulting weights to calculate balances for all possible currencies
-	// 4.5. use the calculated balances in the actual inter fee estimation and pair creation
-	// 4.*. ...
-	// 5. combine with inter-exchange pairs
-	// 6. run the main algorithm, etc.
+// creates effective inter-exchange pairs
+func createInterPairs(configPtr *models.Config, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, indexPtr *models.Index) (models.Pairs, error) {
+	// TODO:
+	// transform: create effective intra-exchange pairs (with regular bid/ask prices)
+	// transform: create effective inter-exchange pairs (with some constant amount denominated in ReferenceAsset like 1 USDT)
+	// engine: find balances of all assets
+	// transform: create actual effective inter-exchange pairs (using all asset balances)
 
-	// pairs, assets, index := transform.CreateAssetPairs(&exchanges, config.Capital)
-	//
+	// FIXME:temporary solution
+	interPairs := transform.CreateInterExchangePairs(exchangesPtr, assetsPtr, configPtr.ReferenceAsset.Balance)
+
+	return interPairs, nil
+}
+
+// continuous update step
+func continuousUpdate(
+	configPtr *models.Config,
+	exchangesPtr *models.Exchanges,
+	clientsPtr *models.Clients,
+	assetsPtr *models.AssetIndexes,
+	indexPtr *models.Index,
+	pairsPtr *models.Pairs,
+) (bool, models.ArbitragePath, error) {
+	// TODO:
+	// client: wait some time
+	// watch: call watcher to update data
+	// transform: create actual effective inter-exchange pairs
+	// engine: search for reasonable arbitrage and find fill ArbitragePath
+	// trade: arbitrage is profitable?
+
+	// TODO: watcher
+	// watch: initialize orderbook watcher (establish websocket connections)
+	// watch: cache all received orderbook data
+	// transform: calculate effective prices (from orderbook data)
+	// watch: update exchanges data structure
+
+	// FIXME: temporary solution
+
+	// wait some time before each update
+	time.Sleep(60 * time.Second)
+
+	// update exchange price data using regular bid/ask prices
+	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, false, false)
+	if err != nil {
+		return false, models.ArbitragePath{}, nil
+	}
+
+	// calculate regular intra-exchange pairs
+	intraPairs := transform.CreateIntraExchangePairs(exchangesPtr, assetsPtr)
+	maps.Copy(*pairsPtr, intraPairs)
+
 	// type SerializedPair struct {
 	// 	Key   models.PairKey
 	// 	Value models.Pair
@@ -156,38 +218,55 @@ func main() {
 	// }
 	// saveAnyJson(serializedPairs, "/home/user/dev/src/arbitrage/pairs.json")
 
-	// path := arbitrage.FindArbitrage(&pairs, &assets, &index, config.SourceAsset)
+	// find arbitrage cycle
+	arbitragePath := models.ArbitragePath{
+		ToCycle:   models.TransactionPath{},
+		Cycle:     engine.FindArbitrage(pairsPtr, assetsPtr, indexPtr, configPtr.ReferenceAsset.Asset),
+		FromCycle: models.TransactionPath{},
+	}
 
-	// if path == nil {
-	// 	slog.Info("no arbitrage opportunity found")
-	// } else {
-	// 	expectedReturn := trade.CalculateExpectedReturn(path, &pairs)
-	//
-	// 	slog.Info("arbitrage opportunity found", "path", trade.GetSimplePath(path), "expectedReturn", expectedReturn)
-	// }
-	//
-	// slog.Info("starting update loop")
-	//
-	// for {
-	// 	time.Sleep(time.Second * 10)
-	// 	err = data.UpdateExchanges(&exchanges, &clients, false, false)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		os.Exit(1)
-	// 	}
-	// 	pairs, assets, index = arbitrage.CreateAssetPairs(&exchanges, config.Capital)
-	// 	path = arbitrage.FindArbitrage(&pairs, &assets, &index, config.SourceAsset)
-	//
-	// 	if path == nil {
-	// 		slog.Info("no arbitrage opportunity found")
-	// 	} else {
-	// 		expectedReturn := trade.CalculateExpectedReturn(path, &pairs)
-	//
-	// 		slog.Info("arbitrage opportunity found", "path", trade.GetSimplePath(path), "expectedReturn", expectedReturn, "lenPairs", len(pairs), "lenAssets", len(assets))
-	// 	}
-	//
-	// }
+	// check if arbitrage is reasonable
+	if arbitragePath.Cycle != nil {
 
-	// 3. Trade execution using trade.go
-	// 3.1. While the arbitrage is still present continue the trading cycle (check using data.go)
+		expectedReturn := trade.CalculateExpectedReturn(arbitragePath.Cycle, pairsPtr)
+
+		if !expectedReturn.Less(decimal.MustNew(1, 2)) {
+
+			slog.Info("arbitrage opportunity found", "path", trade.GetSimplePath(arbitragePath.Cycle), "expectedReturn", expectedReturn, "lenPairs", len(*pairsPtr), "lenAssets", len(*assetsPtr))
+
+			return true, arbitragePath, nil
+
+		}
+	}
+
+	slog.Info("no arbitrage opportunity found")
+	return false, models.ArbitragePath{}, nil
+}
+
+func main() {
+	config, exchanges, clients, assets, index, err := initialization()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	interPairs, err := periodicUpdate(&config, &exchanges, &clients, &assets, &index)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	var arbitragePath models.ArbitragePath
+	var arbitrageFound bool
+
+	for !arbitrageFound {
+		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &clients, &assets, &index, &interPairs)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	// TODO: trade step
+	fmt.Println(arbitragePath.Cycle)
 }
