@@ -69,22 +69,6 @@ func (g *Graph) addSuperSource(sourceAssets models.AssetBalances, assetIndexes m
 	}
 }
 
-// NOTE: restructure the function to also share the output of bellmanFord()
-// or use bellmanFord() inside of arbitrage.go.
-func (g *Graph) findArbitrageCycle(source uint) []uint {
-	slog.Debug("running algorithm...")
-	// NOTE: run the bellmanFord() algorithm on multi-source node
-	predecessors, distances := g.bellmanFord(source)
-	return g.findNegativeWeightCycle(predecessors, distances)
-	// NOTE: check if any of the source assets are in the cycle
-	// if yes then return the cycle as the full transaction path
-	// if not then find the shortest path from any of the source assets (multi-source node, based on output
-	// from previous bellmanFord() run) to the shortest (cheapest) starting node in the arbitrage cycle (with the most negative weight?)
-	// then rerun bellmanFord() with source as the starting node in the arbitrage cycle, to find the shortest (cheapest)
-	// path back to any of the source assets (multi-source node)
-	// find the product of overall transaction path, and if it is still profitable then return it, otherwise return nothing
-}
-
 // bellmanFord determines the shortest path and returns the predecessors and distances
 func (g *Graph) bellmanFord(source uint) ([]uint, []float64) {
 	size := len(g.vertices)

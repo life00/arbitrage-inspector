@@ -1,43 +1,47 @@
 package engine
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
-func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, indexPtr *models.Index, sourceAsset models.AssetKey) models.TransactionPath {
+func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, indexPtr *models.Index, sourceAssets models.AssetBalances) models.TransactionPath {
 	if len(*assetsPtr) == 0 {
 		return nil
 	}
 
 	slog.Info("finding arbitrage path...")
 
-	assets := *assetsPtr
-	// NOTE: use a multi-source node instead of a single asset source
-	// A_1, A_2, A_n source assets would all have `0` weight edges to **S** (multi-source node)
-	// this allows to find the cheapest transfer path from any of the source assets
-	// to the arbitrage cycle if none of the source assets are in the arbitrage cycle.
-	// It is probably better to implement most of this inside of pairs.go Pairs data generation
-	source := assets[sourceAsset].Index
-
 	// prepare the inputs
 	slog.Debug("creating graph data...")
 	edges := getEdges(pairsPtr)
 	vertices := getVertices(assetsPtr)
 	graph := newGraph(edges, vertices)
+	graph.addSuperSource(sourceAssets, *assetsPtr)
 
-	// run the algorithm
 	// TODO: completely refactor the algorithm, because if none of the source assets are
 	// in the arbitrage cycle, it must determine the cheapest path from the source assets (multi-source node)
 	// to the arbitrage cycle starting node, and back to the source assets (multi-source node)
 	// then it evaluates whether it is still profitable, if yes then it returns the overall path, otherwise no arbitrage is found.
-	// Please check all the notes in the FindArbitrage() function
-	cyclePath := graph.findArbitrageCycle(source)
+	// NOTE: check if any of the source assets are in the cycle
+	// if yes then return the cycle as the full transaction path
+	// if not then find the shortest path from any of the source assets (multi-source node, based on output
+	// from previous bellmanFord() run) to the shortest (cheapest) starting node in the arbitrage cycle (with the most negative weight?)
+	// then rerun bellmanFord() with source as the starting node in the arbitrage cycle, to find the shortest (cheapest)
+	// path back to any of the source assets (multi-source node)
+	// find the product of overall transaction path, and if it is still profitable then return it, otherwise return nothing
+
+	// run the algorithm
+	slog.Debug("running algorithm...")
+	predecessors, distances := graph.bellmanFord(0) // 0 is the super source
+	cyclePath := graph.findNegativeWeightCycle(predecessors, distances)
 
 	if cyclePath == nil {
 		return nil
 	}
+	fmt.Println(cyclePath)
 
 	// translate the output if a cycle is found
 	return translatePath(cyclePath, indexPtr)

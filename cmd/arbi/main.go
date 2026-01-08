@@ -218,7 +218,7 @@ func continuousUpdate(
 	// client: wait some time
 	// watch: call watcher to update data
 	// transform: create actual effective inter-exchange pairs
-	// engine: search for reasonable arbitrage and find fill ArbitragePath
+	// engine: search for reasonable arbitrage and find full ArbitragePath
 	// trade: arbitrage is profitable?
 
 	// TODO: watcher
@@ -261,7 +261,7 @@ func continuousUpdate(
 	// find arbitrage cycle
 	arbitragePath := models.ArbitragePath{
 		ToCycle:   models.TransactionPath{},
-		Cycle:     engine.FindArbitrage(pairsPtr, assetsPtr, indexPtr, configPtr.ReferenceAsset.Asset),
+		Cycle:     engine.FindArbitrage(pairsPtr, assetsPtr, indexPtr, configPtr.SourceAssets),
 		FromCycle: models.TransactionPath{},
 	}
 
