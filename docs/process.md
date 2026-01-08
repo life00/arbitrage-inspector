@@ -8,15 +8,16 @@
   - **fetch**: update exchange data structure (prices, exchange fees, network fees)
   - _balances_
     - **transform**: create nominal intra-exchange pairs (no fees)
-    - **transform**: create nominal inter-exchange pairs (no fees) -**engine**: find balances of all assets based on initial capital
+    - **transform**: create nominal inter-exchange pairs (no fees)
+    - **engine**: find balances of all assets based on initial capital
       - create a nominal graph
       - run bellman-ford
       - use resulting weights to convert nominal value of reference asset to all source assets
     - **transform**: update balances of SourceAssets assets in config
     - **trade**: ensure there is sufficient balance in all SourceAssets
-  - _Inter pairs_
+  - _inter pairs_
     - **transform**: create effective intra-exchange pairs (with regular bid/ask prices)
-    - **transform**: create effective inter-exchange pairs\n(with ~1 USD network fees)
+    - **transform**: create effective inter-exchange pairs\n(with 1 USD network fees, denominated in ReferenceAsset)
     - **engine**: find balances of all assets
     - **transform**: create actual inter-exchange pairs (based on found balances)
 - **update loop**
@@ -33,7 +34,7 @@
       - based on capital requirements (using nominal balances of all assets)
     - **watch**: update `exchange` data structure
 - **trade**
-  - _Verifier (WIP)_
+  - _verifier (WIP)_
     - **fetch**: fetch orderbook data of markets in ArbitragePath
     - **transform**: calculate effective prices
     - **trade**: check if arbitrage is still profitable

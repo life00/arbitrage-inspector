@@ -1,9 +1,8 @@
 - [ ] **evaluate the performance, is it fast enough for real-time trading to minimize price slippage risk?**
+- [ ] implement unit tests
 - client
   - ...
 - data
-  - [ ] **createInterExchangePairs doesn't apply the constant fee correctly**
-    - the fee is constant, therefore in order to get the conversion rate for the network it's necessary to convert the original capital into that currency, and calculate the ratio
   - [ ] unified network names
     - `exchange.options['networks']{'UNIFIED_KEY': 'ID'}`
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
@@ -18,9 +17,6 @@
 - arbitrage
   - [ ] **refactor FindArbitrage() to handle arbitrage cycles which do not have any of the source assets inside of them**
     - if none of the source assets are in the arbitrage cycle, it must determine the cheapest path from the source assets (multi-source node) to the cheapest arbitrage cycle starting node, and back to the source assets (multi-source node). Then it evaluates whether it is still profitable, if yes then it returns the overall path, otherwise no arbitrage is found.
-    - check the TODO and NOTE **comments in the code**
-    - <https://gemini.google.com/share/3b791fab58c1>
-  - [ ] implement tests for `bellman_ford.go` (once it is finalized)
 - trade
   - [ ] implement safe fallback if transaction fails for whatever reason
   - ...
