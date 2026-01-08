@@ -42,3 +42,57 @@ func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, index
 	// translate the output if a cycle is found
 	return translatePath(cyclePath, indexPtr)
 }
+
+// FindBalances calculates the conversion value of the reference asset into all other assets
+// using a breadth first search (BFS) to find the most direct market path.
+func FindBalances(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, referenceAsset models.AssetBalance) models.AssetBalances {
+	assetBalances := make(models.AssetBalances)
+
+	// initialize the source asset balance
+	startAssetKey := referenceAsset.Asset
+	assetBalances[startAssetKey] = referenceAsset
+
+	// create an adjacency list for fast lookup
+	adjacencyList := make(map[models.AssetKey][]models.Pair)
+	for _, pair := range *pairsPtr {
+		// We use the AssetKey from the AssetIndex to ensure we map correctly
+		fromKey := pair.From.Asset
+		adjacencyList[fromKey] = append(adjacencyList[fromKey], pair)
+	}
+
+	// BFS queue
+	queue := []models.AssetKey{startAssetKey}
+
+	// visited map
+	visited := make(map[models.AssetKey]bool)
+	visited[startAssetKey] = true
+
+	// run the algorithm
+	for len(queue) > 0 {
+		currentKey := queue[0]
+		queue = queue[1:]
+
+		currentBalance := assetBalances[currentKey].Balance
+
+		// check all possible trades
+		for _, pair := range adjacencyList[currentKey] {
+			neighborKey := pair.To.Asset
+
+			if !visited[neighborKey] {
+				visited[neighborKey] = true
+
+				// calculate the new balance: CurrentBalance * Price
+				newBalance, _ := currentBalance.Mul(pair.Weight)
+
+				assetBalances[neighborKey] = models.AssetBalance{
+					Asset:   neighborKey,
+					Balance: newBalance,
+				}
+
+				queue = append(queue, neighborKey)
+			}
+		}
+	}
+
+	return assetBalances
+}

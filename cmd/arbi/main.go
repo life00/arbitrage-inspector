@@ -64,6 +64,28 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 			"NEIRO",
 			"BROCCOLI",
 		},
+		ReferenceAsset: models.AssetBalance{
+			Asset: models.AssetKey{
+				Exchange: "binance",
+				Currency: "USDC",
+			},
+			Balance: decimal.MustNew(5000, 0),
+		},
+		// all the assets where there is capital denominated in ReferenceAsset amount
+		SourceAssets: map[models.AssetKey]models.AssetBalance{
+			{Exchange: "binance", Currency: "USDC"}: {
+				Asset:   models.AssetKey{Exchange: "binance", Currency: "USDC"},
+				Balance: decimal.Zero,
+			},
+			{Exchange: "kucoin", Currency: "USDC"}: {
+				Asset:   models.AssetKey{Exchange: "kucoin", Currency: "USDC"},
+				Balance: decimal.Zero,
+			},
+			{Exchange: "bitget", Currency: "USDC"}: {
+				Asset:   models.AssetKey{Exchange: "bitget", Currency: "USDC"},
+				Balance: decimal.Zero,
+			},
+		},
 	}
 
 	// initialization of exchanges data structure
@@ -84,7 +106,6 @@ func periodicUpdate(
 	exchangesPtr *models.Exchanges,
 	clientsPtr *models.Clients,
 	assetsPtr *models.AssetIndexes,
-	indexPtr *models.Index,
 ) (models.Pairs, error) {
 	// update exchange data structure
 	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, true, true)
@@ -101,71 +122,87 @@ func periodicUpdate(
 	// }
 
 	// find balances of all assets
-	_, err = findAssetBalances(configPtr, exchangesPtr, clientsPtr, assetsPtr, indexPtr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
+	nominalAssetBalances := findAssetBalances(configPtr, exchangesPtr, assetsPtr)
 
 	// create effective inter-exchange pairs
-	interPairs, err := createInterPairs(configPtr, exchangesPtr, assetsPtr, indexPtr)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
+	interPairs := createInterPairs(configPtr, exchangesPtr, assetsPtr, &nominalAssetBalances)
 
 	return interPairs, nil
 }
 
 // finds source asset balances
-func findAssetBalances(configPtr *models.Config, exchangesPtr *models.Exchanges, clientsPtr *models.Clients, assetsPtr *models.AssetIndexes, indexPtr *models.Index) (map[models.AssetKey]models.AssetBalance, error) {
-	// TODO:
-	// transform: create nominal intra-exchange pairs (no fees)
-	// transform: create nominal inter-exchange pairs (no fees)
-	// engine: find balances of all assets
-	// transform: config.SourceAssets balances
-	// trade: ensure sufficient balances
+func findAssetBalances(configPtr *models.Config, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes) models.AssetBalances {
+	// define pair configuration
+	pairConfig := models.PairConfig{
+		IntraType: models.FeeTypeNominal,
+		InterType: models.FeeTypeNominal,
+		Capital:   configPtr.ReferenceAsset.Balance,
+	}
+	pairs := make(models.Pairs)
 
-	// FIXME: temporary solution
-	*configPtr = models.Config{
-		ReferenceAsset: models.AssetBalance{
-			Asset: models.AssetKey{
-				Exchange: "binance",
-				Currency: "USDC",
-			},
-			Balance: decimal.MustNew(1000000, 0),
-		},
-		SourceAssets: map[models.AssetKey]models.AssetBalance{
-			{Exchange: "binance", Currency: "USDC"}: {
-				Asset:   models.AssetKey{Exchange: "binance", Currency: "USDC"},
-				Balance: decimal.MustNew(1000000, 0),
-			},
-			{Exchange: "kucoin", Currency: "USDC"}: {
-				Asset:   models.AssetKey{Exchange: "kucoin", Currency: "USDC"},
-				Balance: decimal.MustNew(1000000, 0),
-			},
-			{Exchange: "bitget", Currency: "USDC"}: {
-				Asset:   models.AssetKey{Exchange: "bitget", Currency: "USDC"},
-				Balance: decimal.MustNew(1000000, 0),
-			},
-		},
+	// transform: create nominal intra-exchange pairs (no fees)
+	maps.Copy(pairs,
+		transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr))
+
+	// transform: create nominal inter-exchange pairs (no fees)
+	maps.Copy(pairs,
+		transform.CreateInterExchangePairs(pairConfig, exchangesPtr, assetsPtr, &models.AssetBalances{}))
+	// type SerializedPair struct {
+	// 	Key   models.PairKey
+	// 	Value models.Pair
+	// }
+	// var serializedPairs []SerializedPair
+	// for key, value := range pairs {
+	// 	serializedPairs = append(serializedPairs, SerializedPair{
+	// 		Key:   key,
+	// 		Value: value,
+	// 	})
+	// }
+	// saveAnyJson(serializedPairs, "/home/user/dev/src/arbitrage/pairs.json")
+
+	// engine: find balances of all assets
+	assetBalances := engine.FindBalances(&pairs, assetsPtr, configPtr.ReferenceAsset)
+
+	// transform: config.SourceAssets balances
+	for key := range configPtr.SourceAssets {
+		configPtr.SourceAssets[key] = assetBalances[key]
 	}
 
-	return nil, nil
+	// TODO:
+	// trade: ensure sufficient balances
+
+	return assetBalances
 }
 
 // creates effective inter-exchange pairs
-func createInterPairs(configPtr *models.Config, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, indexPtr *models.Index) (models.Pairs, error) {
-	// TODO:
+func createInterPairs(configPtr *models.Config, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, nominalAssetBalancesPtr *models.AssetBalances) models.Pairs {
+	// initialize pair configuration
+	pairConfig := models.PairConfig{
+		IntraType:   models.FeeTypeEffective,
+		InterType:   models.FeeTypeConstant,
+		ConstantFee: decimal.MustNew(1, 0),
+		Capital:     configPtr.ReferenceAsset.Balance,
+	}
+	pairs := make(models.Pairs)
+
 	// transform: create effective intra-exchange pairs (with regular bid/ask prices)
+	maps.Copy(pairs,
+		transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr))
+
 	// transform: create effective inter-exchange pairs (with some constant amount denominated in ReferenceAsset like 1 USDT)
+	maps.Copy(pairs,
+		transform.CreateInterExchangePairs(pairConfig, exchangesPtr, assetsPtr, nominalAssetBalancesPtr))
+
 	// engine: find balances of all assets
+	effectiveAssetBalances := engine.FindBalances(&pairs, assetsPtr, configPtr.ReferenceAsset)
+
 	// transform: create actual effective inter-exchange pairs (using all asset balances)
+	pairConfig = models.PairConfig{
+		InterType: models.FeeTypeEffective,
+	}
+	interPairs := transform.CreateInterExchangePairs(pairConfig, exchangesPtr, assetsPtr, &effectiveAssetBalances)
 
-	// FIXME:temporary solution
-	interPairs := transform.CreateInterExchangePairs(exchangesPtr, assetsPtr, configPtr.ReferenceAsset.Balance)
-
-	return interPairs, nil
+	return interPairs
 }
 
 // continuous update step
@@ -193,7 +230,7 @@ func continuousUpdate(
 	// FIXME: temporary solution
 
 	// wait some time before each update
-	time.Sleep(60 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// update exchange price data using regular bid/ask prices
 	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, false, false)
@@ -202,7 +239,10 @@ func continuousUpdate(
 	}
 
 	// calculate regular intra-exchange pairs
-	intraPairs := transform.CreateIntraExchangePairs(exchangesPtr, assetsPtr)
+	pairConfig := models.PairConfig{
+		IntraType: models.FeeTypeEffective,
+	}
+	intraPairs := transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr)
 	maps.Copy(*pairsPtr, intraPairs)
 
 	// type SerializedPair struct {
@@ -250,7 +290,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	interPairs, err := periodicUpdate(&config, &exchanges, &clients, &assets, &index)
+	interPairs, err := periodicUpdate(&config, &exchanges, &clients, &assets)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

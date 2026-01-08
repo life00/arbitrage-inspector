@@ -6,14 +6,13 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 // CreateAssetIndex() creates asset index based on provided exchanges data structure
 func CreateAssetIndex(exchangesPtr *models.Exchanges) (models.AssetIndexes, models.Index) {
 	slog.Debug("creating asset index map...")
-	var i uint
+	var i uint = 1 // 0 is for the super node
 	assets := make(models.AssetIndexes)
 	index := make(models.Index)
 	// looping through all possible currencies in all exchanges
@@ -44,7 +43,7 @@ func CreateAssetIndex(exchangesPtr *models.Exchanges) (models.AssetIndexes, mode
 // CreateInterExchangePairs creates trading pairs across exchanges.
 // It calculates the total number of currencies and distributes them across
 // multiple concurrent workers to process them in parallel.
-func CreateInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, capital decimal.Decimal) models.Pairs {
+func CreateInterExchangePairs(config models.PairConfig, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, assetBalancesPtr *models.AssetBalances) models.Pairs {
 	slog.Debug("creating inter-exchange pairs...")
 	exchanges := *exchangesPtr
 
@@ -93,7 +92,7 @@ func CreateInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 		wg.Add(1)
 		go func(currencies []interExchangeCurrency) {
 			defer wg.Done()
-			workerResult := interExchangePairWorker(currencies, exchangesPtr, assetsPtr, capital)
+			workerResult := interExchangePairWorker(config, currencies, exchangesPtr, assetsPtr, assetBalancesPtr)
 			resultsChan <- workerResult
 		}(workerCurrencies)
 	}
@@ -113,7 +112,7 @@ func CreateInterExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 // CreateIntraExchangePairs creates trading pairs within each exchange.
 // It calculates the total number of markets and distributes them across
 // multiple concurrent workers to process them in parallel.
-func CreateIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes) models.Pairs {
+func CreateIntraExchangePairs(config models.PairConfig, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes) models.Pairs {
 	slog.Debug("creating intra-exchange pairs...")
 	exchanges := *exchangesPtr
 	allMarkets := make([]exchangeMarket, 0)
@@ -157,7 +156,7 @@ func CreateIntraExchangePairs(exchangesPtr *models.Exchanges, assetsPtr *models.
 		wg.Add(1)
 		go func(markets []exchangeMarket) {
 			defer wg.Done()
-			workerResult := intraExchangePairWorker(markets, assetsPtr)
+			workerResult := intraExchangePairWorker(config, markets, assetsPtr)
 			resultsChan <- workerResult
 		}(workerMarkets)
 	}

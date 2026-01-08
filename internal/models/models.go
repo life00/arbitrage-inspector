@@ -64,6 +64,8 @@ type AssetBalance struct {
 	Balance decimal.Decimal
 }
 
+type AssetBalances map[AssetKey]AssetBalance
+
 type AssetKey struct {
 	Exchange string
 	Currency string
@@ -81,6 +83,22 @@ type Pair struct {
 	Weight        decimal.Decimal
 	Side          string // can be empty string, if inter-exchange
 	Network       string // can be empty string, if intra-exchange
+}
+
+// FeeType mode types
+type FeeType int
+
+const (
+	FeeTypeNominal   FeeType = iota // no fees
+	FeeTypeEffective                // real market/network fees
+	FeeTypeConstant                 // fixed fee
+)
+
+type PairConfig struct {
+	IntraType   FeeType
+	InterType   FeeType
+	ConstantFee decimal.Decimal
+	Capital     decimal.Decimal
 }
 
 type PairKey struct {

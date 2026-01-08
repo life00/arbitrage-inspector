@@ -23,12 +23,12 @@ func getEdges(pairsPtr *models.Pairs) []*Edge {
 }
 
 func getVertices(assetsPtr *models.AssetIndexes) []uint {
-	length := len(*assetsPtr)
-	var vertices []uint
+	vertices := []uint{0} // super node already added, but not connected
 
-	for i := range length {
-		vertices = append(vertices, uint(i))
+	for _, assetIndex := range *assetsPtr {
+		vertices = append(vertices, assetIndex.Index)
 	}
+
 	return vertices
 }
 
@@ -52,6 +52,21 @@ func newEdge(from, to uint, weight float64) *Edge {
 // newGraph returns a graph consisting of edges and vertices
 func newGraph(edges []*Edge, vertices []uint) *Graph {
 	return &Graph{edges: edges, vertices: vertices}
+}
+
+// AddSuperSource connects the super node (index 0) to all available source assets
+func (g *Graph) addSuperSource(sourceAssets models.AssetBalances, assetIndexes models.AssetIndexes) {
+	const superNodeIndex uint = 0
+
+	for key := range sourceAssets {
+		if assetIdx, ok := assetIndexes[key]; ok {
+			// A weight of 0.0 represents a multiplier of 1 (-log(1) = 0).
+			// This effectively moves your initial capital into the
+			// starting currencies of the potential arbitrage cycles.
+			edge := newEdge(superNodeIndex, assetIdx.Index, 0.0)
+			g.edges = append(g.edges, edge)
+		}
+	}
 }
 
 // NOTE: restructure the function to also share the output of bellmanFord()

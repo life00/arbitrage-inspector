@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/govalues/decimal"
@@ -17,7 +16,7 @@ type exchangeMarket struct {
 
 // intraExchangePairWorker processes a slice of markets for a single exchange
 // and creates the corresponding trading pairs, applying the taker fee.
-func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.AssetIndexes) models.Pairs {
+func intraExchangePairWorker(config models.PairConfig, markets []exchangeMarket, assetsPtr *models.AssetIndexes) models.Pairs {
 	assets := *assetsPtr
 	pairs := make(models.Pairs)
 
@@ -37,22 +36,37 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.AssetIn
 
 		// check if both assets exist
 		if baseOk && quoteOk {
-			// calculate fee multiplier
-			feeMultiplier, _ := decimal.One.Sub(market.TakerFee)
-			if market.TakerFee.Sign() == -1 {
-				slog.Warn("taker fee is negative", "exchange", exchangeId, "market", market.Id)
-				continue
-			}
-			if feeMultiplier.Sign() != 1 {
-				slog.Warn("taker fee >= 100%; skipping", "exchange", exchangeId, "market", market.Id)
-				continue
+			// determine the fee multiplier based on the configuration
+			var feeMultiplier decimal.Decimal
+
+			switch config.IntraType {
+			case models.FeeTypeNominal:
+				feeMultiplier = decimal.MustNew(1, 0)
+			case models.FeeTypeEffective:
+				// calculate fee multiplier
+				if market.TakerFee.Sign() == -1 {
+					slog.Warn("taker fee is negative", "exchange", exchangeId, "market", market.Id)
+					continue
+				}
+				// "sell" pair
+				// Bid * (1 - TakerFee)
+				// "buy" pair
+				// (1 / Ask) * (1 - TakerFee)
+				feeMultiplier, _ = decimal.One.Sub(market.TakerFee)
+				if feeMultiplier.Sign() != 1 {
+					slog.Warn("taker fee >= 100%; skipping", "exchange", exchangeId, "market", market.Id)
+					continue
+				}
+			case models.FeeTypeConstant:
+				// this is not a possible option
+				// assuming nominal behavior
+				feeMultiplier = decimal.MustNew(1, 0)
 			}
 
 			// create the "sell" pair (selling Base for Quote)
 			// you sell the base asset at the bid price to receive the quote asset
 			// the fee is taken from the quote asset you receive
 			if market.Bid.Sign() > 0 { // ensure there is a valid bid price
-				// Bid * (1 - TakerFee)
 				effectiveRate, _ := market.Bid.Mul(feeMultiplier)
 
 				pairKey := models.PairKey{From: baseAssetKey, To: quoteAssetKey}
@@ -73,7 +87,6 @@ func intraExchangePairWorker(markets []exchangeMarket, assetsPtr *models.AssetIn
 				// the amount of Base you get for 1 Quote before fees is 1 / Ask
 				// (1 / Ask)
 				rate, _ := decimal.One.Quo(market.Ask)
-				// (1 / Ask) * (1 - TakerFee)
 				effectiveRate, _ := rate.Mul(feeMultiplier)
 
 				pairKey := models.PairKey{From: quoteAssetKey, To: baseAssetKey}
@@ -100,13 +113,15 @@ type interExchangeCurrency struct {
 // interExchangePairWorker processes a slice of currencies and creates the corresponding
 // inter-exchange trading pairs.
 func interExchangePairWorker(
+	config models.PairConfig,
 	currencies []interExchangeCurrency,
 	exchangesPtr *models.Exchanges,
 	assetsPtr *models.AssetIndexes,
-	capital decimal.Decimal,
+	assetBalancesPtr *models.AssetBalances,
 ) models.Pairs {
 	exchanges := *exchangesPtr
 	assets := *assetsPtr
+	assetBalances := *assetBalancesPtr
 	pairs := make(models.Pairs)
 
 	for _, c := range currencies {
@@ -122,27 +137,27 @@ func interExchangePairWorker(
 				fromExchange, fromExchangeOk := exchanges[fromExchangeId]
 				toExchange, toExchangeOk := exchanges[toExchangeId]
 				if !fromExchangeOk || !toExchangeOk {
-					slog.Warn("missing exchange information for %s or %s", fromExchangeId, toExchangeId)
+					slog.Warn("missing exchange information", "from", fromExchangeId, "to", toExchangeId)
 					continue
 				}
 
 				fromCurrency, fromCurrencyOk := fromExchange.Currencies[c.currency]
 				toCurrency, toCurrencyOk := toExchange.Currencies[c.currency]
 				if !fromCurrencyOk || !toCurrencyOk {
-					slog.Warn(fmt.Sprintf("missing currency information for %s on exchange %s or %s", c.currency, fromExchangeId, toExchangeId))
+					slog.Warn("missing currency information", "currency", c.currency, "from", fromExchangeId, "to", toExchangeId)
 					continue
 				}
 
 				// find common networks and the one with the cheapest withdrawal fee
 				var cheapestNetwork string
-				minFee := decimal.Zero
+				actualMinFee := decimal.Zero
 				firstCommonNetworkFound := false
 
 				for fromNetworkId, fromNetwork := range fromCurrency.Networks {
 					if _, ok := toCurrency.Networks[fromNetworkId]; ok {
 						// use Cmp to compare decimal values; Cmp returns -1 if less than, 0 if equal, 1 if greater than
-						if !firstCommonNetworkFound || fromNetwork.WithdrawalFee.Cmp(minFee) < 0 {
-							minFee = fromNetwork.WithdrawalFee
+						if !firstCommonNetworkFound || fromNetwork.WithdrawalFee.Cmp(actualMinFee) < 0 {
+							actualMinFee = fromNetwork.WithdrawalFee
 							cheapestNetwork = fromNetworkId
 							firstCommonNetworkFound = true
 						}
@@ -160,25 +175,66 @@ func interExchangePairWorker(
 				fromAsset, fromAssetOk := assets[fromAssetKey]
 				toAsset, toAssetOk := assets[toAssetKey]
 				if !fromAssetOk || !toAssetOk {
-					slog.Warn("missing asset information for %s on %s or %s on %s", c.currency, fromExchangeId, c.currency, toExchangeId)
+					slog.Warn("missing asset information", "currency", c.currency, "from", fromExchangeId, "to", toExchangeId)
 					continue
 				}
 
-				// calculate the effective rate after withdrawal fees
-				if minFee.Sign() < 0 {
+				// determine fee to apply based on configuration
+				feeAmount := decimal.Zero
+
+				switch config.InterType {
+				case models.FeeTypeNominal:
+					feeAmount = decimal.Zero
+				case models.FeeTypeEffective:
+					// capital balance in the local currency
+					localCapital := assetBalances[fromAssetKey].Balance
+
+					// calculate effective rate after network fees
+					// effectiveRate = (LocalCapital - Fee) / LocalCapital
+					effectiveLocalCapital, _ := localCapital.Sub(actualMinFee)
+
+					if effectiveLocalCapital.Sign() <= 0 {
+						// only warn for Effective mode
+						// in Constant mode, this might be expected for small test capitals
+						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.Id)
+						continue
+					}
+
+					effectiveRate, _ := effectiveLocalCapital.Quo(localCapital)
+
+					pairKey := models.PairKey{From: fromAssetKey, To: toAssetKey}
+					pairs[pairKey] = models.Pair{
+						IntraExchange: false,
+						From:          fromAsset,
+						To:            toAsset,
+						Weight:        effectiveRate,
+						Network:       cheapestNetwork,
+					}
+					// the process is over, so continue to next pair
+					continue
+				case models.FeeTypeConstant:
+					feeAmount = config.ConstantFee
+				}
+
+				// validate fee and capital
+				if feeAmount.Sign() < 0 {
+					continue
+				}
+				if config.Capital.Sign() <= 0 {
 					continue
 				}
 
-				if capital.Sign() <= 0 {
-					continue
-				}
-
-				effectiveCapital, _ := capital.Sub(minFee)
+				// calculate effective rate after network fees
+				// effectiveRate = (Capital - Fee) / Capital
+				effectiveCapital, _ := config.Capital.Sub(feeAmount)
 				if effectiveCapital.Sign() <= 0 {
-					slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.Id)
+					// Only warn for Effective mode; in Constant mode, this might be expected for small test capitals
+					if config.InterType == models.FeeTypeEffective {
+						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.Id)
+					}
 					continue
 				}
-				effectiveRate, _ := effectiveCapital.Quo(capital)
+				effectiveRate, _ := effectiveCapital.Quo(config.Capital)
 
 				pairKey := models.PairKey{From: fromAssetKey, To: toAssetKey}
 				pairs[pairKey] = models.Pair{
