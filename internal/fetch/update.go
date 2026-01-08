@@ -31,8 +31,6 @@ func updateExchange(
 	}
 	mu.Unlock()
 
-	slog.Debug(fmt.Sprintf("updating exchange data for %s...", exchangeId))
-
 	var wg sync.WaitGroup
 	var errs sync.Map
 

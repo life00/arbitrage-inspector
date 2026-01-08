@@ -92,8 +92,6 @@ func loadClient(exchanges []string) (models.Clients, error) {
 			defer wg.Done()
 			result := clientResult{}
 
-			slog.Debug(fmt.Sprintf("loading exchange %s...", ex))
-
 			// handle credentials from .env
 			options := map[string]interface{}{}
 			apiKeyEnvName := strings.ToUpper(ex) + "_API_KEY"

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"log/slog"
 	"math"
 
 	"github.com/life00/arbitrage-inspector/internal/models"
@@ -160,7 +159,6 @@ func reconstructPath(predecessors []uint, startNode uint) []uint {
 }
 
 func translatePath(cyclePath []uint, indexPtr *models.Index) models.TransactionPath {
-	slog.Debug("translating path...")
 	index := *indexPtr
 	var transactionPath models.TransactionPath
 	length := len(cyclePath)

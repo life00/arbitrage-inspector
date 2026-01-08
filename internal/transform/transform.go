@@ -11,7 +11,7 @@ import (
 
 // CreateAssetIndex() creates asset index based on provided exchanges data structure
 func CreateAssetIndex(exchangesPtr *models.Exchanges) (models.AssetIndexes, models.Index) {
-	slog.Debug("creating asset index map...")
+	slog.Debug("creating asset index map")
 	var i uint = 1 // 0 is for the super node
 	assets := make(models.AssetIndexes)
 	index := make(models.Index)
@@ -44,7 +44,6 @@ func CreateAssetIndex(exchangesPtr *models.Exchanges) (models.AssetIndexes, mode
 // It calculates the total number of currencies and distributes them across
 // multiple concurrent workers to process them in parallel.
 func CreateInterExchangePairs(config models.PairConfig, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes, assetBalancesPtr *models.AssetBalances) models.Pairs {
-	slog.Debug("creating inter-exchange pairs...")
 	exchanges := *exchangesPtr
 
 	// create a map to store all unique currencies and the exchanges they are available on
@@ -113,7 +112,6 @@ func CreateInterExchangePairs(config models.PairConfig, exchangesPtr *models.Exc
 // It calculates the total number of markets and distributes them across
 // multiple concurrent workers to process them in parallel.
 func CreateIntraExchangePairs(config models.PairConfig, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes) models.Pairs {
-	slog.Debug("creating intra-exchange pairs...")
 	exchanges := *exchangesPtr
 	allMarkets := make([]exchangeMarket, 0)
 

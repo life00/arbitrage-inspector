@@ -1,21 +1,18 @@
 package engine
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, indexPtr *models.Index, sourceAssets models.AssetBalances) models.TransactionPath {
+	slog.Debug("finding arbitrage path")
 	if len(*assetsPtr) == 0 {
 		return nil
 	}
 
-	slog.Info("finding arbitrage path...")
-
 	// prepare the inputs
-	slog.Debug("creating graph data...")
 	edges := getEdges(pairsPtr)
 	vertices := getVertices(assetsPtr)
 	graph := newGraph(edges, vertices)
@@ -34,14 +31,12 @@ func FindArbitrage(pairsPtr *models.Pairs, assetsPtr *models.AssetIndexes, index
 	// find the product of overall transaction path, and if it is still profitable then return it, otherwise return nothing
 
 	// run the algorithm
-	slog.Debug("running algorithm...")
 	predecessors, distances := graph.bellmanFord(0) // 0 is the super source
 	cyclePath := graph.findNegativeWeightCycle(predecessors, distances)
 
 	if cyclePath == nil {
 		return nil
 	}
-	fmt.Println(cyclePath)
 
 	// translate the output if a cycle is found
 	return translatePath(cyclePath, indexPtr)

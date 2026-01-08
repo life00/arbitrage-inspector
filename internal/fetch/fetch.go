@@ -10,20 +10,16 @@ import (
 )
 
 func validateInput(config models.Config) (models.Clients, error) {
-	slog.Info("validating inputs...")
-	slog.Debug("validating exchanges...")
 	err := validateExchanges(config.Exchanges)
 	if err != nil {
 		return nil, err
 	}
-	slog.Debug("initializing ccxt...")
 	clients, err := loadClient(config.Exchanges)
 	if err != nil {
 		return nil, err
 	}
 
 	if config.CurrencyInputMode == models.SpecifiedCurrencies {
-		slog.Debug("validating currencies...")
 		err = validateCurrencies(config.Currencies, &clients)
 		if err != nil {
 			return nil, err
@@ -38,7 +34,6 @@ func createExchanges(config models.Config, clientsPtr *models.Clients) models.Ex
 	if clientsPtr == nil || len(*clientsPtr) == 0 {
 		return models.Exchanges{}
 	}
-	slog.Info("creating data structure...")
 
 	// these common maps are created and passed to the function here to avoid redundant processing inside of createExchange
 	currencySet := make(map[string]struct{}) // can be nil
@@ -68,7 +63,7 @@ func createExchanges(config models.Config, clientsPtr *models.Clients) models.Ex
 }
 
 func InitializeExchanges(config models.Config) (models.Exchanges, models.Clients, error) {
-	slog.Info("initializing data...")
+	slog.Debug("initializing exchanges")
 	clients, err := validateInput(config)
 	if err != nil {
 		return nil, nil, err
@@ -85,6 +80,7 @@ func UpdateExchanges(
 	updateCurrencyFees bool,
 	updateMarketFees bool,
 ) error {
+	slog.Debug("updating exchanges")
 	if clientsPtr == nil || len(*clientsPtr) == 0 {
 		return fmt.Errorf("list of clients is empty")
 	}
@@ -94,7 +90,6 @@ func UpdateExchanges(
 	if len(*clientsPtr) != len(*exchangesPtr) {
 		return fmt.Errorf("length of clients and exchange data is not matching")
 	}
-	slog.Info("updating exchange data...")
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -121,8 +116,6 @@ func UpdateExchanges(
 	if len(errors) > 0 {
 		return fmt.Errorf("exchange data update failed with %d error(s):\n- %s", len(errors), strings.Join(errors, "\n- "))
 	}
-
-	slog.Info("successfully updated exchange data")
 
 	return nil
 }

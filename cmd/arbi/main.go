@@ -27,6 +27,7 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		}),
 	)
 	slog.SetDefault(logger)
+	slog.Info("starting initialization")
 
 	// get the environment variables (API credentials)
 	err := godotenv.Load()
@@ -107,6 +108,7 @@ func periodicUpdate(
 	clientsPtr *models.Clients,
 	assetsPtr *models.AssetIndexes,
 ) (models.Pairs, error) {
+	slog.Info("running periodic update")
 	// update exchange data structure
 	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, true, true)
 	if err != nil {
@@ -125,6 +127,7 @@ func periodicUpdate(
 	nominalAssetBalances := findAssetBalances(configPtr, exchangesPtr, assetsPtr)
 
 	// create effective inter-exchange pairs
+	slog.Debug("creating inter-exchange pairs")
 	interPairs := createInterPairs(configPtr, exchangesPtr, assetsPtr, &nominalAssetBalances)
 
 	return interPairs, nil
@@ -132,6 +135,7 @@ func periodicUpdate(
 
 // finds source asset balances
 func findAssetBalances(configPtr *models.Config, exchangesPtr *models.Exchanges, assetsPtr *models.AssetIndexes) models.AssetBalances {
+	slog.Debug("finding asset balances")
 	// define pair configuration
 	pairConfig := models.PairConfig{
 		IntraType: models.FeeTypeNominal,
@@ -214,6 +218,7 @@ func continuousUpdate(
 	indexPtr *models.Index,
 	pairsPtr *models.Pairs,
 ) (bool, models.ArbitragePath, error) {
+	slog.Info("running continuous update")
 	// TODO:
 	// client: wait some time
 	// watch: call watcher to update data
@@ -242,6 +247,7 @@ func continuousUpdate(
 	pairConfig := models.PairConfig{
 		IntraType: models.FeeTypeEffective,
 	}
+	slog.Debug("creating intra-exchange pairs")
 	intraPairs := transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr)
 	maps.Copy(*pairsPtr, intraPairs)
 
@@ -299,6 +305,7 @@ func main() {
 	var arbitragePath models.ArbitragePath
 	var arbitrageFound bool
 
+	slog.Info("starting continuous update")
 	for !arbitrageFound {
 		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &clients, &assets, &index, &interPairs)
 		if err != nil {
