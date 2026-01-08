@@ -1,3 +1,4 @@
+// Package models contains all data models for the project.
 package models
 
 import (
@@ -29,23 +30,23 @@ type Clients map[string]ccxt.IExchange
 type Exchanges map[string]Exchange
 
 type Exchange struct {
-	Id         string
+	ID         string
 	Currencies map[string]Currency
 	Markets    map[string]Market
 }
 
 type CurrencyNetwork struct {
-	Id            string
+	ID            string
 	WithdrawalFee decimal.Decimal
 }
 
 type Currency struct {
-	Id       string
+	ID       string
 	Networks map[string]CurrencyNetwork
 }
 
 type Market struct {
-	Id        string
+	ID        string
 	Base      string
 	Quote     string
 	Ask       decimal.Decimal

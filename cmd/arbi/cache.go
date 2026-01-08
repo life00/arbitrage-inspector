@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func saveAnyJson(data any, filename string) error {
+func saveAnyJSON(data any, filename string) error {
 	file, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		err = fmt.Errorf("failed to marshal JSON: %w", err)
@@ -15,7 +15,7 @@ func saveAnyJson(data any, filename string) error {
 		return err
 	}
 
-	err = os.WriteFile(filename, file, 0644)
+	err = os.WriteFile(filename, file, 0o644)
 	if err != nil {
 		err = fmt.Errorf("failed to write to file: %w", err)
 		slog.Error(err.Error())
@@ -26,7 +26,7 @@ func saveAnyJson(data any, filename string) error {
 	return nil
 }
 
-func loadAnyJson[T any](filename string) (T, error) {
+func loadAnyJSON[T any](filename string) (T, error) {
 	var data T
 
 	file, err := os.ReadFile(filename)

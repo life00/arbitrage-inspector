@@ -26,7 +26,7 @@ func TestUpdateExchange(t *testing.T) {
 			name: "successful full update",
 			testExchanges: models.Exchanges{
 				"testExchange": {
-					Id: "testExchange",
+					ID: "testExchange",
 					Markets: map[string]models.Market{
 						"BTC/USDT": {},
 					},
@@ -68,7 +68,7 @@ func TestUpdateExchange(t *testing.T) {
 			name: "update prices only",
 			testExchanges: models.Exchanges{
 				"testExchange": {
-					Id:      "testExchange",
+					ID:      "testExchange",
 					Markets: map[string]models.Market{"BTC/USDT": {}},
 				},
 			},
@@ -87,7 +87,7 @@ func TestUpdateExchange(t *testing.T) {
 		{
 			name: "exchange not found",
 			testExchanges: models.Exchanges{
-				"anotherExchange": {Id: "anotherExchange"},
+				"anotherExchange": {ID: "anotherExchange"},
 			},
 			mockClient:         &TestExchange{Name: "testExchange"},
 			updateCurrencyFees: true,
@@ -99,7 +99,7 @@ func TestUpdateExchange(t *testing.T) {
 			name: "error in price update",
 			testExchanges: models.Exchanges{
 				"testExchange": {
-					Id: "testExchange",
+					ID: "testExchange",
 					Markets: map[string]models.Market{
 						"BTC/USDT": {},
 					},
@@ -118,7 +118,7 @@ func TestUpdateExchange(t *testing.T) {
 			name: "error in currency fees update",
 			testExchanges: models.Exchanges{
 				"testExchange": {
-					Id: "testExchange",
+					ID: "testExchange",
 					Currencies: map[string]models.Currency{
 						"BTC": {},
 					},
@@ -137,7 +137,7 @@ func TestUpdateExchange(t *testing.T) {
 			name: "error in market fees update",
 			testExchanges: models.Exchanges{
 				"testExchange": {
-					Id: "testExchange",
+					ID: "testExchange",
 					Markets: map[string]models.Market{
 						"BTC/USDT": {},
 					},
@@ -187,10 +187,10 @@ func TestFetchPrices(t *testing.T) {
 		{
 			name: "successful update",
 			exchange: &models.Exchange{
-				Id: "testExchange",
+				ID: "testExchange",
 				Markets: map[string]models.Market{
-					"BTC/USDT": {Id: "BTC/USDT"},
-					"ETH/SOL":  {Id: "ETH/SOL"},
+					"BTC/USDT": {ID: "BTC/USDT"},
+					"ETH/SOL":  {ID: "ETH/SOL"},
 				},
 			},
 			mockTickers: ccxt.Tickers{
@@ -204,8 +204,8 @@ func TestFetchPrices(t *testing.T) {
 		{
 			name: "empty tickers",
 			exchange: &models.Exchange{
-				Id:      "testExchange",
-				Markets: map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT"}},
+				ID:      "testExchange",
+				Markets: map[string]models.Market{"BTC/USDT": {ID: "BTC/USDT"}},
 			},
 			mockTickers: ccxt.Tickers{Tickers: map[string]ccxt.Ticker{}},
 			wantErr:     false,
@@ -213,7 +213,7 @@ func TestFetchPrices(t *testing.T) {
 		{
 			name: "invalid bid value",
 			exchange: &models.Exchange{
-				Id: "testExchange",
+				ID: "testExchange",
 				Markets: map[string]models.Market{
 					"BTC/USDT": {},
 				},
@@ -276,10 +276,10 @@ func TestFetchCurrencies(t *testing.T) {
 		{
 			name: "successful update with best network",
 			exchange: &models.Exchange{
-				Id: "testExchange",
+				ID: "testExchange",
 				Currencies: map[string]models.Currency{
-					"BTC": {Id: "BTC"},
-					"ETH": {Id: "ETH"},
+					"BTC": {ID: "BTC"},
+					"ETH": {ID: "ETH"},
 				},
 			},
 			mockCurrencies: ccxt.Currencies{
@@ -304,8 +304,8 @@ func TestFetchCurrencies(t *testing.T) {
 		{
 			name: "empty currencies",
 			exchange: &models.Exchange{
-				Id:         "testExchange",
-				Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}},
+				ID:         "testExchange",
+				Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}},
 			},
 			mockCurrencies: ccxt.Currencies{Currencies: map[string]ccxt.Currency{}},
 			wantErr:        false,
@@ -313,8 +313,8 @@ func TestFetchCurrencies(t *testing.T) {
 		{
 			name: "invalid fee value",
 			exchange: &models.Exchange{
-				Id:         "testExchange",
-				Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}},
+				ID:         "testExchange",
+				Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}},
 			},
 			mockCurrencies: ccxt.Currencies{
 				Currencies: map[string]ccxt.Currency{
@@ -385,10 +385,10 @@ func TestFetchMarkets(t *testing.T) {
 		{
 			name: "successful update",
 			exchange: &models.Exchange{
-				Id: "testExchange",
+				ID: "testExchange",
 				Markets: map[string]models.Market{
-					"BTC/USDT": {Id: "BTC/USDT"},
-					"ETH/SOL":  {Id: "ETH/SOL"},
+					"BTC/USDT": {ID: "BTC/USDT"},
+					"ETH/SOL":  {ID: "ETH/SOL"},
 				},
 			},
 			mockMarkets: []ccxt.MarketInterface{
@@ -400,8 +400,8 @@ func TestFetchMarkets(t *testing.T) {
 		{
 			name: "empty markets list",
 			exchange: &models.Exchange{
-				Id:      "testExchange",
-				Markets: map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT"}},
+				ID:      "testExchange",
+				Markets: map[string]models.Market{"BTC/USDT": {ID: "BTC/USDT"}},
 			},
 			mockMarkets: []ccxt.MarketInterface{},
 			wantErr:     false,
@@ -409,7 +409,7 @@ func TestFetchMarkets(t *testing.T) {
 		{
 			name: "invalid taker fee",
 			exchange: &models.Exchange{
-				Id: "testExchange",
+				ID: "testExchange",
 				Markets: map[string]models.Market{
 					"BTC/USDT": {},
 				},
@@ -422,7 +422,7 @@ func TestFetchMarkets(t *testing.T) {
 		{
 			name: "invalid taker fee",
 			exchange: &models.Exchange{
-				Id: "testExchange",
+				ID: "testExchange",
 				Markets: map[string]models.Market{
 					"BTC/USDT": {},
 				},

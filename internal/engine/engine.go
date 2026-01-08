@@ -1,3 +1,4 @@
+// Package engine provides functions to run key algorithms on the data.
 package engine
 
 import (

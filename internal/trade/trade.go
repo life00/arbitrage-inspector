@@ -1,3 +1,4 @@
+// Package trade provides functions to execute and manage trades using CCXT library.
 package trade
 
 import (

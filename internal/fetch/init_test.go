@@ -220,14 +220,14 @@ func TestCreateExchanges(t *testing.T) {
 			testClients: &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id:         "exchangeA",
-					Markets:    map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}},
+					ID:         "exchangeA",
+					Markets:    map[string]models.Market{"BTC/USDT": {ID: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}, "USDT": {ID: "USDT"}},
 				},
 				"exchangeB": {
-					Id:         "exchangeB",
-					Markets:    map[string]models.Market{"ADA/USDT": {Id: "ADA/USDT", Base: "ADA", Quote: "USDT"}, "BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}, "ADA": {Id: "ADA"}},
+					ID:         "exchangeB",
+					Markets:    map[string]models.Market{"ADA/USDT": {ID: "ADA/USDT", Base: "ADA", Quote: "USDT"}, "BTC/USDT": {ID: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}, "USDT": {ID: "USDT"}, "ADA": {ID: "ADA"}},
 				},
 			},
 		},
@@ -239,14 +239,14 @@ func TestCreateExchanges(t *testing.T) {
 			testClients: &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id:         "exchangeA",
-					Markets:    map[string]models.Market{"BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "ETH": {Id: "ETH"}, "USDT": {Id: "USDT"}},
+					ID:         "exchangeA",
+					Markets:    map[string]models.Market{"BTC/USDT": {ID: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}, "ETH": {ID: "ETH"}, "USDT": {ID: "USDT"}},
 				},
 				"exchangeB": {
-					Id:         "exchangeB",
-					Markets:    map[string]models.Market{"ADA/USDT": {Id: "ADA/USDT", Base: "ADA", Quote: "USDT"}, "BTC/USDT": {Id: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "USDT": {Id: "USDT"}, "ADA": {Id: "ADA"}},
+					ID:         "exchangeB",
+					Markets:    map[string]models.Market{"ADA/USDT": {ID: "ADA/USDT", Base: "ADA", Quote: "USDT"}, "BTC/USDT": {ID: "BTC/USDT", Base: "BTC", Quote: "USDT"}},
+					Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}, "USDT": {ID: "USDT"}, "ADA": {ID: "ADA"}},
 				},
 			},
 		},
@@ -259,14 +259,14 @@ func TestCreateExchanges(t *testing.T) {
 			testClients: &models.Clients{"exchangeA": testExchangeA, "exchangeB": testExchangeB},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id:         "exchangeA",
+					ID:         "exchangeA",
 					Markets:    map[string]models.Market{},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}, "ETH": {Id: "ETH"}},
+					Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}, "ETH": {ID: "ETH"}},
 				},
 				"exchangeB": {
-					Id:         "exchangeB",
+					ID:         "exchangeB",
 					Markets:    map[string]models.Market{},
-					Currencies: map[string]models.Currency{"BTC": {Id: "BTC"}},
+					Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}},
 				},
 			},
 		},
@@ -297,7 +297,7 @@ func TestCreateExchanges(t *testing.T) {
 			testClients: &models.Clients{"exchangeA": testExchangeA},
 			want: models.Exchanges{
 				"exchangeA": {
-					Id:         "exchangeA",
+					ID:         "exchangeA",
 					Markets:    map[string]models.Market{},
 					Currencies: map[string]models.Currency{},
 				},

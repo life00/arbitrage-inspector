@@ -1,3 +1,4 @@
+// Package transform provides functions to transform data into various data structures.
 package transform
 
 import (
@@ -45,7 +46,7 @@ func intraExchangePairWorker(config models.PairConfig, markets []exchangeMarket,
 			case models.FeeTypeEffective:
 				// calculate fee multiplier
 				if market.TakerFee.Sign() == -1 {
-					slog.Warn("taker fee is negative", "exchange", exchangeId, "market", market.Id)
+					slog.Warn("taker fee is negative", "exchange", exchangeId, "market", market.ID)
 					continue
 				}
 				// "sell" pair
@@ -54,7 +55,7 @@ func intraExchangePairWorker(config models.PairConfig, markets []exchangeMarket,
 				// (1 / Ask) * (1 - TakerFee)
 				feeMultiplier, _ = decimal.One.Sub(market.TakerFee)
 				if feeMultiplier.Sign() != 1 {
-					slog.Warn("taker fee >= 100%; skipping", "exchange", exchangeId, "market", market.Id)
+					slog.Warn("taker fee >= 100%; skipping", "exchange", exchangeId, "market", market.ID)
 					continue
 				}
 			case models.FeeTypeConstant:
@@ -72,7 +73,7 @@ func intraExchangePairWorker(config models.PairConfig, markets []exchangeMarket,
 				pairKey := models.PairKey{From: baseAssetKey, To: quoteAssetKey}
 				pairs[pairKey] = models.Pair{
 					IntraExchange: true,
-					Symbol:        market.Id,
+					Symbol:        market.ID,
 					From:          baseAsset,
 					To:            quoteAsset,
 					Weight:        effectiveRate,
@@ -92,7 +93,7 @@ func intraExchangePairWorker(config models.PairConfig, markets []exchangeMarket,
 				pairKey := models.PairKey{From: quoteAssetKey, To: baseAssetKey}
 				pairs[pairKey] = models.Pair{
 					IntraExchange: true,
-					Symbol:        market.Id,
+					Symbol:        market.ID,
 					From:          quoteAsset,
 					To:            baseAsset,
 					Weight:        effectiveRate,
@@ -196,7 +197,7 @@ func interExchangePairWorker(
 					if effectiveLocalCapital.Sign() <= 0 {
 						// only warn for Effective mode
 						// in Constant mode, this might be expected for small test capitals
-						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.Id)
+						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.ID)
 						continue
 					}
 
@@ -230,7 +231,7 @@ func interExchangePairWorker(
 				if effectiveCapital.Sign() <= 0 {
 					// Only warn for Effective mode; in Constant mode, this might be expected for small test capitals
 					if config.InterType == models.FeeTypeEffective {
-						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.Id)
+						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.ID)
 					}
 					continue
 				}

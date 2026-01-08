@@ -1,3 +1,4 @@
+// Package fetch provides functions to fetch data using CCXT library.
 package fetch
 
 import (

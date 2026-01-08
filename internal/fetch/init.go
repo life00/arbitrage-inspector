@@ -213,7 +213,7 @@ func createExchange(
 	client := *clientPtr
 
 	exchange := models.Exchange{
-		Id:         client.GetId(),
+		ID:         client.GetId(),
 		Markets:    make(map[string]models.Market),
 		Currencies: make(map[string]models.Currency),
 	}
@@ -222,7 +222,7 @@ func createExchange(
 	exchange.Markets = createMarkets(clientPtr, exchange.Currencies)
 
 	mu.Lock()
-	exchanges[exchange.Id] = exchange
+	exchanges[exchange.ID] = exchange
 	mu.Unlock()
 }
 
@@ -234,25 +234,25 @@ func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Curre
 	marketsList := client.GetMarketsList()
 
 	for _, m := range marketsList {
-		var baseId string
-		var quoteId string
+		var baseID string
+		var quoteID string
 		if m.BaseId != nil && m.QuoteId != nil {
-			baseId = strings.ToUpper(*m.BaseId)
-			quoteId = strings.ToUpper(*m.QuoteId)
+			baseID = strings.ToUpper(*m.BaseId)
+			quoteID = strings.ToUpper(*m.QuoteId)
 		}
 
 		// check if both base and quote currencies are in the currency data structure
-		if _, baseExists := currencies[baseId]; baseExists {
-			if _, quoteExists := currencies[quoteId]; quoteExists {
+		if _, baseExists := currencies[baseID]; baseExists {
+			if _, quoteExists := currencies[quoteID]; quoteExists {
 				// check market conditions
 				if m.Active != nil && *m.Active &&
 					m.Spot != nil && *m.Spot &&
 					m.Symbol != nil {
 					id := strings.ToUpper(*m.Symbol)
 					markets[id] = models.Market{
-						Id:    id,
-						Base:  baseId,
-						Quote: quoteId,
+						ID:    id,
+						Base:  baseID,
+						Quote: quoteID,
 					}
 				}
 			}
@@ -277,13 +277,13 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.Curren
 			}
 		}
 
-		for currencyId := range currencySet {
-			if c, exists := apiCurrenciesMap[currencyId]; exists {
+		for currencyID := range currencySet {
+			if c, exists := apiCurrenciesMap[currencyID]; exists {
 				// check all currency conditions
 				if c.Active != nil && *c.Active &&
 					c.Deposit != nil && *c.Deposit &&
 					c.Withdraw != nil && *c.Withdraw {
-					currenciesMap[currencyId] = models.Currency{Id: currencyId}
+					currenciesMap[currencyID] = models.Currency{ID: currencyID}
 				}
 			}
 		}
@@ -300,15 +300,15 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.Curren
 				c.Active != nil && *c.Active &&
 				c.Deposit != nil && *c.Deposit &&
 				c.Withdraw != nil && *c.Withdraw {
-				currenciesMap[*c.Code] = models.Currency{Id: *c.Code}
+				currenciesMap[*c.Code] = models.Currency{ID: *c.Code}
 			}
 		}
 
 	}
 
 	// delete all currencies which should be excluded
-	for currencyId := range excludedCurrencySet {
-		delete(currenciesMap, currencyId)
+	for currencyID := range excludedCurrencySet {
+		delete(currenciesMap, currencyID)
 	}
 
 	return currenciesMap

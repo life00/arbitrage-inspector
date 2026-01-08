@@ -18,7 +18,7 @@ func TestCreateAssetIndex(t *testing.T) {
 			name: "successful creation with multiple exchanges and currencies",
 			testExchanges: models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Currencies: map[string]models.Currency{
 						"BTC": {},
 						"ETH": {},
@@ -26,7 +26,7 @@ func TestCreateAssetIndex(t *testing.T) {
 					},
 				},
 				"kucoin": {
-					Id: "kucoin",
+					ID: "kucoin",
 					Currencies: map[string]models.Currency{
 						"SOL":  {},
 						"XRP":  {},
@@ -43,7 +43,7 @@ func TestCreateAssetIndex(t *testing.T) {
 			name: "single exchange with one currency",
 			testExchanges: models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Currencies: map[string]models.Currency{
 						"BTC": {},
 					},
@@ -54,14 +54,14 @@ func TestCreateAssetIndex(t *testing.T) {
 			name: "exchanges with overlapping currencies",
 			testExchanges: models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Currencies: map[string]models.Currency{
 						"BTC": {},
 						"ETH": {},
 					},
 				},
 				"kucoin": {
-					Id: "kucoin",
+					ID: "kucoin",
 					Currencies: map[string]models.Currency{
 						"ETH": {},
 						"XRP": {},
@@ -120,10 +120,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 			name: "single exchange with multiple markets",
 			exchangesPtr: &models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Markets: map[string]models.Market{
 						"BTC/USDC": {
-							Id:        "BTC/USDC",
+							ID:        "BTC/USDC",
 							Base:      "BTC",
 							Quote:     "USDC",
 							Ask:       decimal.MustNew(11064601, 2), // 110646.01
@@ -132,7 +132,7 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 							Timestamp: time.Now(),
 						},
 						"ETH/USDC": {
-							Id:        "ETH/USDC",
+							ID:        "ETH/USDC",
 							Base:      "ETH",
 							Quote:     "USDC",
 							Ask:       decimal.MustNew(429301, 2), // 4293.01
@@ -199,10 +199,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 			name: "multiple exchanges with markets",
 			exchangesPtr: &models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Markets: map[string]models.Market{
 						"BTC/USDC": {
-							Id:        "BTC/USDC",
+							ID:        "BTC/USDC",
 							Base:      "BTC",
 							Quote:     "USDC",
 							Ask:       decimal.MustNew(11064601, 2),
@@ -213,10 +213,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 					},
 				},
 				"kucoin": {
-					Id: "kucoin",
+					ID: "kucoin",
 					Markets: map[string]models.Market{
 						"ETH/USDC": {
-							Id:        "ETH/USDC",
+							ID:        "ETH/USDC",
 							Base:      "ETH",
 							Quote:     "USDC",
 							Ask:       decimal.MustNew(429334, 2),
@@ -290,10 +290,10 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 			name: "markets with zero bid or ask",
 			exchangesPtr: &models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Markets: map[string]models.Market{
 						"BTC/USDC": {
-							Id:        "BTC/USDC",
+							ID:        "BTC/USDC",
 							Base:      "BTC",
 							Quote:     "USDC",
 							Ask:       decimal.MustNew(11064601, 2), // 110646.01
@@ -302,7 +302,7 @@ func TestCreateIntraExchangePairs(t *testing.T) {
 							Timestamp: time.Now(),
 						},
 						"ETH/USDC": {
-							Id:        "ETH/USDC",
+							ID:        "ETH/USDC",
 							Base:      "ETH",
 							Quote:     "USDC",
 							Ask:       decimal.MustNew(0, 0),      // 0
@@ -380,25 +380,25 @@ func TestCreateInterExchangePairs(t *testing.T) {
 			name: "multiple exchanges with common currency and networks",
 			exchangesPtr: &models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Currencies: map[string]models.Currency{
 						"BTC": {
-							Id: "BTC",
+							ID: "BTC",
 							Networks: map[string]models.CurrencyNetwork{
-								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},    // 0.00005
-								"TRC20": {Id: "TRC20", WithdrawalFee: decimal.MustNew(10, 5)}, // 0.00010
+								"BTC":   {ID: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},    // 0.00005
+								"TRC20": {ID: "TRC20", WithdrawalFee: decimal.MustNew(10, 5)}, // 0.00010
 							},
 						},
 					},
 				},
 				"kraken": {
-					Id: "kraken",
+					ID: "kraken",
 					Currencies: map[string]models.Currency{
 						"BTC": {
-							Id: "BTC",
+							ID: "BTC",
 							Networks: map[string]models.CurrencyNetwork{
-								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},    // 0.00005
-								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(20, 5)}, // 0.00020
+								"BTC":   {ID: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},    // 0.00005
+								"BEP20": {ID: "BEP20", WithdrawalFee: decimal.MustNew(20, 5)}, // 0.00020
 							},
 						},
 					},
@@ -436,23 +436,23 @@ func TestCreateInterExchangePairs(t *testing.T) {
 			name: "no common networks between exchanges",
 			exchangesPtr: &models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Currencies: map[string]models.Currency{
 						"ETH": {
-							Id: "ETH",
+							ID: "ETH",
 							Networks: map[string]models.CurrencyNetwork{
-								"ETH": {Id: "ETH", WithdrawalFee: decimal.MustNew(1, 4)}, // 0.0001
+								"ETH": {ID: "ETH", WithdrawalFee: decimal.MustNew(1, 4)}, // 0.0001
 							},
 						},
 					},
 				},
 				"kraken": {
-					Id: "kraken",
+					ID: "kraken",
 					Currencies: map[string]models.Currency{
 						"ETH": {
-							Id: "ETH",
+							ID: "ETH",
 							Networks: map[string]models.CurrencyNetwork{
-								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(2, 4)}, // 0.0002
+								"BEP20": {ID: "BEP20", WithdrawalFee: decimal.MustNew(2, 4)}, // 0.0002
 							},
 						},
 					},
@@ -476,37 +476,37 @@ func TestCreateInterExchangePairs(t *testing.T) {
 			name: "multiple currencies, some with common networks",
 			exchangesPtr: &models.Exchanges{
 				"binance": {
-					Id: "binance",
+					ID: "binance",
 					Currencies: map[string]models.Currency{
 						"BTC": {
-							Id: "BTC",
+							ID: "BTC",
 							Networks: map[string]models.CurrencyNetwork{
-								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},
-								"TRC20": {Id: "TRC20", WithdrawalFee: decimal.MustNew(10, 5)},
+								"BTC":   {ID: "BTC", WithdrawalFee: decimal.MustNew(5, 5)},
+								"TRC20": {ID: "TRC20", WithdrawalFee: decimal.MustNew(10, 5)},
 							},
 						},
 						"ETH": {
-							Id: "ETH",
+							ID: "ETH",
 							Networks: map[string]models.CurrencyNetwork{
-								"ERC20": {Id: "ERC20", WithdrawalFee: decimal.MustNew(1, 4)},
+								"ERC20": {ID: "ERC20", WithdrawalFee: decimal.MustNew(1, 4)},
 							},
 						},
 					},
 				},
 				"kraken": {
-					Id: "kraken",
+					ID: "kraken",
 					Currencies: map[string]models.Currency{
 						"BTC": {
-							Id: "BTC",
+							ID: "BTC",
 							Networks: map[string]models.CurrencyNetwork{
-								"BTC":   {Id: "BTC", WithdrawalFee: decimal.MustNew(6, 5)}, // 0.00006
-								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(20, 5)},
+								"BTC":   {ID: "BTC", WithdrawalFee: decimal.MustNew(6, 5)}, // 0.00006
+								"BEP20": {ID: "BEP20", WithdrawalFee: decimal.MustNew(20, 5)},
 							},
 						},
 						"ETH": {
-							Id: "ETH",
+							ID: "ETH",
 							Networks: map[string]models.CurrencyNetwork{
-								"BEP20": {Id: "BEP20", WithdrawalFee: decimal.MustNew(2, 4)},
+								"BEP20": {ID: "BEP20", WithdrawalFee: decimal.MustNew(2, 4)},
 							},
 						},
 					},

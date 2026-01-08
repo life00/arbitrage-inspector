@@ -21,10 +21,10 @@ func updateExchange(
 	updateMarketFees bool,
 ) error {
 	client := *clientPtr
-	exchangeId := client.GetId()
+	exchangeID := client.GetId()
 
 	mu.Lock()
-	exchange, ok := (*exchanges)[exchangeId]
+	exchange, ok := (*exchanges)[exchangeID]
 	if !ok {
 		mu.Unlock()
 		return fmt.Errorf("exchange not found in data structure")
@@ -111,7 +111,7 @@ func updateExchange(
 	}
 
 	mu.Lock()
-	(*exchanges)[exchangeId] = exchange
+	(*exchanges)[exchangeID] = exchange
 	mu.Unlock()
 
 	return nil
@@ -186,13 +186,13 @@ func fetchCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[
 					}
 					uppercaseName := strings.ToUpper(name)
 					updatedCurrency.Networks[uppercaseName] = models.CurrencyNetwork{
-						Id:            uppercaseName,
+						ID:            uppercaseName,
 						WithdrawalFee: fee,
 					}
 				}
 			}
 
-			updatedCurrency.Id = id
+			updatedCurrency.ID = id
 			updatedCurrencies[id] = updatedCurrency
 		}
 	}
