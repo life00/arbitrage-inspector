@@ -48,7 +48,7 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 			// "bitget",
 			// "htx",
 			// "coinbase",
-			"binance", "bitfinex", "bitget", "bitmart", "bitmex", "bitstamp", "bitvavo", "blockchaincom", "bybit", "coinbase", "coincatch", "coinsph", "cryptocom", "foxbit", "gemini", "kraken", "lbank", "mexc", "okx", "phemex", "upbit", "wavesexchange", "whitebit", "zonda",
+			"binance", "bitfinex", "bitget", "bitmart", "bitmex", "bitstamp", "bitvavo", "bybit", "coinbase", "coincatch", "coinsph", "cryptocom", "foxbit", "gemini", "kraken", "lbank", "mexc", "okx", "phemex", "whitebit",
 		},
 		CurrencyInputMode: models.AllCurrencies,
 		Currencies: []string{
