@@ -49,13 +49,13 @@
 - orderbook fetcher
   - concurrently fetching orderbook for markets within arbitrage path
   - checks if the arbitrage is still possible, accounting for liquidity
-  - multiple ccxt.FetchOrderBook() concurrently
+  - multiple ccxtpro.FetchOrderBook() concurrently
 - price data
   - bid/ask prices
-  - ccxt.FetchTickers()
+  - ccxtpro.FetchTickers()
 - currency data
   - network fees
-  - ccxt.FetchCurrencies()
+  - ccxtpro.FetchCurrencies()
 - market data
   - exchange fees
-  - ccxt.FetchMarkets()
+  - ccxtpro.FetchMarkets()

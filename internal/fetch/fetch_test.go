@@ -6,18 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/joho/godotenv"
 )
 
-// TestExchange implements the ccxt.IExchange interface for testing
+// TestExchange implements the ccxtpro.IExchange interface for testing
 type TestExchange struct {
-	ccxt.IExchange
+	ccxtpro.IExchange
 	Name                 string
-	Currencies           []ccxt.Currency
-	APICurrencies        ccxt.Currencies
-	Markets              []ccxt.MarketInterface
-	Tickers              ccxt.Tickers
+	Currencies           []ccxtpro.Currency
+	APICurrencies        ccxtpro.Currencies
+	Markets              []ccxtpro.MarketInterface
+	Tickers              ccxtpro.Tickers
 	FetchTickersError    error
 	FetchCurrenciesError error
 	FetchMarketsError    error
@@ -39,40 +39,40 @@ func (m *TestExchange) GetId() string {
 	return m.Name
 }
 
-func (m *TestExchange) GetCurrenciesList() []ccxt.Currency {
+func (m *TestExchange) GetCurrenciesList() []ccxtpro.Currency {
 	return m.Currencies
 }
 
-func (m *TestExchange) GetMarketsList() []ccxt.MarketInterface {
+func (m *TestExchange) GetMarketsList() []ccxtpro.MarketInterface {
 	return m.Markets
 }
 
-func (m *TestExchange) FetchCurrencies(args ...interface{}) (ccxt.Currencies, error) {
+func (m *TestExchange) FetchCurrencies(args ...interface{}) (ccxtpro.Currencies, error) {
 	if m.FetchCurrenciesError != nil {
-		return ccxt.Currencies{}, m.FetchCurrenciesError
+		return ccxtpro.Currencies{}, m.FetchCurrenciesError
 	}
 	return m.APICurrencies, nil
 }
 
-func (m *TestExchange) FetchMarkets(args ...interface{}) ([]ccxt.MarketInterface, error) {
+func (m *TestExchange) FetchMarkets(args ...interface{}) ([]ccxtpro.MarketInterface, error) {
 	if m.FetchMarketsError != nil {
 		return nil, m.FetchMarketsError
 	}
 	return m.Markets, nil
 }
 
-func (m *TestExchange) FetchTickers(options ...ccxt.FetchTickersOptions) (ccxt.Tickers, error) {
+func (m *TestExchange) FetchTickers(options ...ccxtpro.FetchTickersOptions) (ccxtpro.Tickers, error) {
 	if m.FetchTickersError != nil {
-		return ccxt.Tickers{}, m.FetchTickersError
+		return ccxtpro.Tickers{}, m.FetchTickersError
 	}
 	return m.Tickers, nil
 }
 
-func newMockCurrency(code string) ccxt.Currency {
+func newMockCurrency(code string) ccxtpro.Currency {
 	active := true
 	deposit := true
 	withdraw := true
-	return ccxt.Currency{
+	return ccxtpro.Currency{
 		Code:     &code,
 		Active:   &active,
 		Deposit:  &deposit,
@@ -80,8 +80,8 @@ func newMockCurrency(code string) ccxt.Currency {
 	}
 }
 
-func newMockMarket(symbol, baseId, quoteId string, active, spot bool) ccxt.MarketInterface {
-	return ccxt.MarketInterface{
+func newMockMarket(symbol, baseId, quoteId string, active, spot bool) ccxtpro.MarketInterface {
+	return ccxtpro.MarketInterface{
 		Symbol:  &symbol,
 		BaseId:  &baseId,
 		QuoteId: &quoteId,
@@ -90,9 +90,9 @@ func newMockMarket(symbol, baseId, quoteId string, active, spot bool) ccxt.Marke
 	}
 }
 
-func newMockTicker(symbol string, bid, ask float64) ccxt.Ticker {
+func newMockTicker(symbol string, bid, ask float64) ccxtpro.Ticker {
 	timestamp := time.Now().UnixNano()
-	return ccxt.Ticker{
+	return ccxtpro.Ticker{
 		Symbol:    &symbol,
 		Bid:       &bid,
 		Ask:       &ask,

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
@@ -98,15 +98,15 @@ func TestLoadCcxt(t *testing.T) {
 func TestValidateCurrencies(t *testing.T) {
 	testExchangeA := &TestExchange{
 		Name:       "exchangeA",
-		Currencies: []ccxt.Currency{newMockCurrency("BTC"), newMockCurrency("ETH")},
+		Currencies: []ccxtpro.Currency{newMockCurrency("BTC"), newMockCurrency("ETH")},
 	}
 	testExchangeB := &TestExchange{
 		Name:       "exchangeB",
-		Currencies: []ccxt.Currency{newMockCurrency("LTC"), newMockCurrency("ADA")},
+		Currencies: []ccxtpro.Currency{newMockCurrency("LTC"), newMockCurrency("ADA")},
 	}
 	testExchangeCWithInvalid := &TestExchange{
 		Name: "exchangeC",
-		Currencies: []ccxt.Currency{
+		Currencies: []ccxtpro.Currency{
 			newMockCurrency("XRP"),
 			{Code: newString("DOGE"), Active: newBool(false)},
 			{Code: newString("SOL"), Deposit: newBool(false)},
@@ -178,14 +178,14 @@ func TestValidateCurrencies(t *testing.T) {
 func TestCreateExchanges(t *testing.T) {
 	testExchangeA := &TestExchange{
 		Name: "exchangeA",
-		Currencies: []ccxt.Currency{
+		Currencies: []ccxtpro.Currency{
 			newMockCurrency("BTC"),
 			newMockCurrency("ETH"),
 			newMockCurrency("USDT"),
 			// Inactive currency
 			{Code: newString("XRP"), Active: newBool(false)},
 		},
-		Markets: []ccxt.MarketInterface{
+		Markets: []ccxtpro.MarketInterface{
 			newMockMarket("BTC/USDT", "BTC", "USDT", true, true),
 			newMockMarket("ETH/DAI", "ETH", "DAI", true, true),    // Invalid: DAI not in currencies
 			newMockMarket("XRP/USDT", "XRP", "USDT", true, true),  // Invalid: XRP is inactive
@@ -194,12 +194,12 @@ func TestCreateExchanges(t *testing.T) {
 	}
 	testExchangeB := &TestExchange{
 		Name: "exchangeB",
-		Currencies: []ccxt.Currency{
+		Currencies: []ccxtpro.Currency{
 			newMockCurrency("BTC"),
 			newMockCurrency("USDT"),
 			newMockCurrency("ADA"),
 		},
-		Markets: []ccxt.MarketInterface{
+		Markets: []ccxtpro.MarketInterface{
 			newMockMarket("BTC/USDT", "BTC", "USDT", true, true),
 			newMockMarket("ADA/USDT", "ADA", "USDT", true, true),
 		},

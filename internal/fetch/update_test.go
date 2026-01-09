@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
@@ -37,15 +37,15 @@ func TestUpdateExchange(t *testing.T) {
 			},
 			mockClient: &TestExchange{
 				Name: "testExchange",
-				Tickers: ccxt.Tickers{
-					Tickers: map[string]ccxt.Ticker{
+				Tickers: ccxtpro.Tickers{
+					Tickers: map[string]ccxtpro.Ticker{
 						"BTC/USDT": newMockTicker("BTC/USDT", 50000, 50001),
 					},
 				},
-				APICurrencies: ccxt.Currencies{
-					Currencies: map[string]ccxt.Currency{
+				APICurrencies: ccxtpro.Currencies{
+					Currencies: map[string]ccxtpro.Currency{
 						"BTC": {
-							Networks: map[string]ccxt.Network{
+							Networks: map[string]ccxtpro.Network{
 								"testnet": {
 									Active:   newBool(true),
 									Fee:      newFloat64(0.0001),
@@ -56,7 +56,7 @@ func TestUpdateExchange(t *testing.T) {
 						},
 					},
 				},
-				Markets: []ccxt.MarketInterface{
+				Markets: []ccxtpro.MarketInterface{
 					{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001)},
 				},
 			},
@@ -74,8 +74,8 @@ func TestUpdateExchange(t *testing.T) {
 			},
 			mockClient: &TestExchange{
 				Name: "testExchange",
-				Tickers: ccxt.Tickers{
-					Tickers: map[string]ccxt.Ticker{
+				Tickers: ccxtpro.Tickers{
+					Tickers: map[string]ccxtpro.Ticker{
 						"BTC/USDT": newMockTicker("BTC/USDT", 50000, 50001),
 					},
 				},
@@ -158,7 +158,7 @@ func TestUpdateExchange(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mu := &sync.Mutex{}
 			exchanges := &tc.testExchanges
-			var clientPtr ccxt.IExchange = tc.mockClient
+			var clientPtr ccxtpro.IExchange = tc.mockClient
 
 			err := updateExchange(&clientPtr, mu, exchanges, tc.updateCurrencyFees, tc.updateMarketFees)
 
@@ -181,7 +181,7 @@ func TestFetchPrices(t *testing.T) {
 	testCases := []struct {
 		name        string
 		exchange    *models.Exchange
-		mockTickers ccxt.Tickers
+		mockTickers ccxtpro.Tickers
 		wantErr     bool
 	}{
 		{
@@ -193,8 +193,8 @@ func TestFetchPrices(t *testing.T) {
 					"ETH/SOL":  {ID: "ETH/SOL"},
 				},
 			},
-			mockTickers: ccxt.Tickers{
-				Tickers: map[string]ccxt.Ticker{
+			mockTickers: ccxtpro.Tickers{
+				Tickers: map[string]ccxtpro.Ticker{
 					"BTC/USDT": newMockTicker("BTC/USDT", 50000.50, 50001.00),
 					"ETH/SOL":  newMockTicker("ETH/SOL", 3000.75, 3001.25),
 				},
@@ -207,7 +207,7 @@ func TestFetchPrices(t *testing.T) {
 				ID:      "testExchange",
 				Markets: map[string]models.Market{"BTC/USDT": {ID: "BTC/USDT"}},
 			},
-			mockTickers: ccxt.Tickers{Tickers: map[string]ccxt.Ticker{}},
+			mockTickers: ccxtpro.Tickers{Tickers: map[string]ccxtpro.Ticker{}},
 			wantErr:     false,
 		},
 		{
@@ -218,8 +218,8 @@ func TestFetchPrices(t *testing.T) {
 					"BTC/USDT": {},
 				},
 			},
-			mockTickers: ccxt.Tickers{
-				Tickers: map[string]ccxt.Ticker{
+			mockTickers: ccxtpro.Tickers{
+				Tickers: map[string]ccxtpro.Ticker{
 					"BTC/USDT": {
 						Symbol: newString("BTC/USDT"),
 						Bid:    newFloat64(math.Inf(1)),
@@ -233,7 +233,7 @@ func TestFetchPrices(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{Tickers: tc.mockTickers}
-			var clientPtr ccxt.IExchange = mockClient
+			var clientPtr ccxtpro.IExchange = mockClient
 			updatedPrices, err := fetchPrices(&clientPtr, tc.exchange)
 
 			if (err != nil) != tc.wantErr {
@@ -270,7 +270,7 @@ func TestFetchCurrencies(t *testing.T) {
 	testCases := []struct {
 		name           string
 		exchange       *models.Exchange
-		mockCurrencies ccxt.Currencies
+		mockCurrencies ccxtpro.Currencies
 		wantErr        bool
 	}{
 		{
@@ -282,18 +282,18 @@ func TestFetchCurrencies(t *testing.T) {
 					"ETH": {ID: "ETH"},
 				},
 			},
-			mockCurrencies: ccxt.Currencies{
-				Currencies: map[string]ccxt.Currency{
+			mockCurrencies: ccxtpro.Currencies{
+				Currencies: map[string]ccxtpro.Currency{
 					"BTC": {
 						Id: newString("BTC"),
-						Networks: map[string]ccxt.Network{
+						Networks: map[string]ccxtpro.Network{
 							"BITCOIN":   {Active: newBool(true), Fee: newFloat64(0.0005), Deposit: newBool(true), Withdraw: newBool(true)},
 							"LIGHTNING": {Active: newBool(true), Fee: newFloat64(0.0001), Deposit: newBool(true), Withdraw: newBool(true)},
 						},
 					},
 					"ETH": {
 						Id: newString("ETH"),
-						Networks: map[string]ccxt.Network{
+						Networks: map[string]ccxtpro.Network{
 							"ERC20": {Active: newBool(true), Fee: newFloat64(10), Deposit: newBool(true), Withdraw: newBool(true)},
 						},
 					},
@@ -307,7 +307,7 @@ func TestFetchCurrencies(t *testing.T) {
 				ID:         "testExchange",
 				Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}},
 			},
-			mockCurrencies: ccxt.Currencies{Currencies: map[string]ccxt.Currency{}},
+			mockCurrencies: ccxtpro.Currencies{Currencies: map[string]ccxtpro.Currency{}},
 			wantErr:        false,
 		},
 		{
@@ -316,11 +316,11 @@ func TestFetchCurrencies(t *testing.T) {
 				ID:         "testExchange",
 				Currencies: map[string]models.Currency{"BTC": {ID: "BTC"}},
 			},
-			mockCurrencies: ccxt.Currencies{
-				Currencies: map[string]ccxt.Currency{
+			mockCurrencies: ccxtpro.Currencies{
+				Currencies: map[string]ccxtpro.Currency{
 					"BTC": {
 						Id: newString("BTC"),
-						Networks: map[string]ccxt.Network{
+						Networks: map[string]ccxtpro.Network{
 							"Bitcoin": {Active: newBool(true), Fee: newFloat64(math.Inf(1)), Deposit: newBool(true), Withdraw: newBool(true)},
 						},
 					},
@@ -333,7 +333,7 @@ func TestFetchCurrencies(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{APICurrencies: tc.mockCurrencies}
-			var clientPtr ccxt.IExchange = mockClient
+			var clientPtr ccxtpro.IExchange = mockClient
 			updatedCurrencies, err := fetchCurrencies(&clientPtr, tc.exchange)
 
 			if (err != nil) != tc.wantErr {
@@ -379,7 +379,7 @@ func TestFetchMarkets(t *testing.T) {
 	testCases := []struct {
 		name        string
 		exchange    *models.Exchange
-		mockMarkets []ccxt.MarketInterface
+		mockMarkets []ccxtpro.MarketInterface
 		wantErr     bool
 	}{
 		{
@@ -391,7 +391,7 @@ func TestFetchMarkets(t *testing.T) {
 					"ETH/SOL":  {ID: "ETH/SOL"},
 				},
 			},
-			mockMarkets: []ccxt.MarketInterface{
+			mockMarkets: []ccxtpro.MarketInterface{
 				{Symbol: newString("BTC/USDT"), Taker: newFloat64(0.001)},
 				{Symbol: newString("ETH/SOL"), Taker: newFloat64(0.002)},
 			},
@@ -403,7 +403,7 @@ func TestFetchMarkets(t *testing.T) {
 				ID:      "testExchange",
 				Markets: map[string]models.Market{"BTC/USDT": {ID: "BTC/USDT"}},
 			},
-			mockMarkets: []ccxt.MarketInterface{},
+			mockMarkets: []ccxtpro.MarketInterface{},
 			wantErr:     false,
 		},
 		{
@@ -414,7 +414,7 @@ func TestFetchMarkets(t *testing.T) {
 					"BTC/USDT": {},
 				},
 			},
-			mockMarkets: []ccxt.MarketInterface{
+			mockMarkets: []ccxtpro.MarketInterface{
 				{Symbol: newString("BTC/USDT"), Taker: newFloat64(math.Inf(1))},
 			},
 			wantErr: true,
@@ -427,7 +427,7 @@ func TestFetchMarkets(t *testing.T) {
 					"BTC/USDT": {},
 				},
 			},
-			mockMarkets: []ccxt.MarketInterface{
+			mockMarkets: []ccxtpro.MarketInterface{
 				{Symbol: newString("BTC/USDT"), Taker: newFloat64(math.Inf(1))},
 			},
 			wantErr: true,
@@ -437,7 +437,7 @@ func TestFetchMarkets(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &TestExchange{Markets: tc.mockMarkets}
-			var clientPtr ccxt.IExchange = mockClient
+			var clientPtr ccxtpro.IExchange = mockClient
 			updatedMarkets, err := fetchFees(&clientPtr, tc.exchange)
 
 			if (err != nil) != tc.wantErr {

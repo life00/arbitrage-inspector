@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
 func updateExchange(
 	ctx context.Context,
-	clientPtr *ccxt.IExchange,
+	clientPtr *ccxtpro.IExchange,
 	mu *sync.Mutex,
 	exchanges *models.Exchanges,
 	updateCurrencyFees bool,
@@ -140,7 +140,7 @@ func updateExchange(
 }
 
 // fetchPrices fetches price data to update conversion prices
-func fetchPrices(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[string]models.Market, error) {
+func fetchPrices(clientPtr *ccxtpro.IExchange, exchange *models.Exchange) (map[string]models.Market, error) {
 	client := *clientPtr
 
 	updatedPrices := make(map[string]models.Market)
@@ -177,7 +177,7 @@ func fetchPrices(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[stri
 }
 
 // fetchCurrencies fetches currency data to update withdrawal fees and network details
-func fetchCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[string]models.Currency, error) {
+func fetchCurrencies(clientPtr *ccxtpro.IExchange, exchange *models.Exchange) (map[string]models.Currency, error) {
 	client := *clientPtr
 
 	updatedCurrencies := make(map[string]models.Currency)
@@ -223,7 +223,7 @@ func fetchCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[
 }
 
 // fetchFees fetches market data to update taker and maker fees
-func fetchFees(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[string]models.Market, error) {
+func fetchFees(clientPtr *ccxtpro.IExchange, exchange *models.Exchange) (map[string]models.Market, error) {
 	client := *clientPtr
 
 	updatedFees := make(map[string]models.Market)
@@ -233,7 +233,7 @@ func fetchFees(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[string
 		return nil, fmt.Errorf("API call failed: %w", err)
 	}
 
-	apiMarketsMap := make(map[string]ccxt.MarketInterface)
+	apiMarketsMap := make(map[string]ccxtpro.MarketInterface)
 	for _, apiMarket := range apiMarkets {
 		if apiMarket.Symbol != nil {
 			apiMarketsMap[*apiMarket.Symbol] = apiMarket

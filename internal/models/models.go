@@ -4,7 +4,7 @@ package models
 import (
 	"time"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/govalues/decimal"
 )
 
@@ -27,7 +27,7 @@ type Config struct {
 	SourceAssets       map[AssetKey]AssetBalance
 }
 
-type Clients map[string]ccxt.IExchange
+type Clients map[string]ccxtpro.IExchange
 
 type Exchanges map[string]Exchange
 

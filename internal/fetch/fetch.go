@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
@@ -102,7 +102,7 @@ func UpdateExchanges(
 
 	for _, client := range *clientsPtr {
 		wg.Add(1)
-		go func(c ccxt.IExchange) {
+		go func(c ccxtpro.IExchange) {
 			defer wg.Done()
 
 			// context with timeout

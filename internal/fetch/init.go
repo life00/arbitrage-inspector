@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ccxt/ccxt/go/v4"
+	"github.com/ccxt/ccxt/go/v4/pro"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
@@ -45,8 +45,8 @@ func validateExchanges(exchanges []string) error {
 		"fetchDepositAddress",
 	}
 
-	for _, exchangeID := range ccxt.Exchanges {
-		exchange := ccxt.CreateExchange(exchangeID, nil)
+	for _, exchangeID := range ccxtpro.Exchanges {
+		exchange := ccxtpro.CreateExchange(exchangeID, nil)
 		has := exchange.GetHas()
 
 		// assume all functions are supported until proven otherwise.
@@ -76,7 +76,7 @@ func validateExchanges(exchanges []string) error {
 
 // helper struct for loadCcxt()
 type clientResult struct {
-	client ccxt.IExchange
+	client ccxtpro.IExchange
 	err    error
 }
 
@@ -112,7 +112,7 @@ func loadClient(exchanges []string, authenticate bool) (models.Clients, error) {
 			}
 
 			// instantiate the exchange object
-			client := ccxt.CreateExchange(ex, options)
+			client := ccxtpro.CreateExchange(ex, options)
 
 			if client == nil {
 				result.err = fmt.Errorf("failed to create CCXT exchange for %s: exchange instance is nil", ex)
@@ -206,7 +206,7 @@ func validateCurrencies(currencies []string, clientsPtr *models.Clients) error {
 
 // createExchange handles the logic for a single CCXT exchange client.
 func createExchange(
-	clientPtr *ccxt.IExchange,
+	clientPtr *ccxtpro.IExchange,
 	currencyInputMode models.CurrencyInputMode,
 	currencySet map[string]struct{}, // can be nil if currencyInputMode = models.SpecifiedCurrencies
 	excludedCurrencySet map[string]struct{},
@@ -232,7 +232,7 @@ func createExchange(
 }
 
 // createMarkets gets initial data and creates a Markets object.
-func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Currency) map[string]models.Market {
+func createMarkets(clientPtr *ccxtpro.IExchange, currencies map[string]models.Currency) map[string]models.Market {
 	client := *clientPtr
 
 	markets := make(map[string]models.Market)
@@ -267,7 +267,7 @@ func createMarkets(clientPtr *ccxt.IExchange, currencies map[string]models.Curre
 }
 
 // createCurrencies gets initial data and creates a Currencies object.
-func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.CurrencyInputMode, currencySet map[string]struct{}, excludedCurrencySet map[string]struct{}) map[string]models.Currency {
+func createCurrencies(clientPtr *ccxtpro.IExchange, currencyInputMode models.CurrencyInputMode, currencySet map[string]struct{}, excludedCurrencySet map[string]struct{}) map[string]models.Currency {
 	client := *clientPtr
 
 	currenciesMap := make(map[string]models.Currency)
@@ -275,7 +275,7 @@ func createCurrencies(clientPtr *ccxt.IExchange, currencyInputMode models.Curren
 	switch currencyInputMode {
 	case models.SpecifiedCurrencies:
 
-		apiCurrenciesMap := make(map[string]ccxt.Currency)
+		apiCurrenciesMap := make(map[string]ccxtpro.Currency)
 		for _, c := range client.GetCurrenciesList() {
 			if c.Code != nil {
 				apiCurrenciesMap[*c.Code] = c

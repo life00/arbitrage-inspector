@@ -197,7 +197,7 @@ func interExchangePairWorker(
 					if effectiveLocalCapital.Sign() <= 0 {
 						// only warn for Effective mode
 						// in Constant mode, this might be expected for small test capitals
-						slog.Warn("withdrawal fee higher than capital; skipping", "exchange", fromExchangeId, "currency", fromCurrency.ID)
+						slog.Warn("withdrawal fee higher than capital", "exchange", fromExchangeId, "currency", fromCurrency.ID)
 						continue
 					}
 

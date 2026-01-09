@@ -48,7 +48,9 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 			// "bitget",
 			// "htx",
 			// "coinbase",
-			"binance", "bitfinex", "bitget", "bitmart", "bitmex", "bitstamp", "bitvavo", "bybit", "coinbase", "coincatch", "coinsph", "cryptocom", "foxbit", "gemini", "kraken", "lbank", "mexc", "okx", "phemex", "whitebit",
+
+			// "binance",
+			"bitfinex", "bitget", "bitmart", "bitmex", "bitstamp", "bitvavo", "bybit", "coinbase", "coincatch", "cryptocom", "gemini", "kraken", "lbank", "mexc", "okx", "phemex", "whitebit",
 		},
 		CurrencyInputMode: models.AllCurrencies,
 		Currencies: []string{
@@ -70,10 +72,10 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		},
 		ReferenceAsset: models.AssetBalance{
 			Asset: models.AssetKey{
-				Exchange: "binance",
+				Exchange: "bitget",
 				Currency: "USDC",
 			},
-			Balance: decimal.MustNew(2000, 0),
+			Balance: decimal.MustNew(10000, 0),
 		},
 		// all the assets where there is capital denominated in ReferenceAsset amount
 		SourceAssets: map[models.AssetKey]models.AssetBalance{
