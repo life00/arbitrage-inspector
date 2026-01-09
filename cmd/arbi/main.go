@@ -40,12 +40,15 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 	// and define the config structure
 
 	config := models.Config{
+		Authenticate: false,
+		Timeout:      60 * time.Second,
 		Exchanges: []string{
-			"binance",
-			"kucoin",
-			"bitget",
+			// "binance",
+			// "kucoin",
+			// "bitget",
 			// "htx",
 			// "coinbase",
+			"binance", "bitfinex", "bitget", "bitmart", "bitmex", "bitstamp", "bitvavo", "blockchaincom", "bybit", "coinbase", "coincatch", "coinsph", "cryptocom", "foxbit", "gemini", "kraken", "lbank", "mexc", "okx", "phemex", "upbit", "wavesexchange", "whitebit", "zonda",
 		},
 		CurrencyInputMode: models.AllCurrencies,
 		Currencies: []string{
@@ -70,7 +73,7 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 				Exchange: "binance",
 				Currency: "USDC",
 			},
-			Balance: decimal.MustNew(5000, 0),
+			Balance: decimal.MustNew(2000, 0),
 		},
 		// all the assets where there is capital denominated in ReferenceAsset amount
 		SourceAssets: map[models.AssetKey]models.AssetBalance{
@@ -110,7 +113,7 @@ func periodicUpdate(
 ) (models.Pairs, error) {
 	slog.Info("running periodic update")
 	// update exchange data structure
-	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, true, true)
+	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, true, true, configPtr.Timeout)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -235,10 +238,10 @@ func continuousUpdate(
 	// FIXME: temporary solution
 
 	// wait some time before each update
-	time.Sleep(5 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	// update exchange price data using regular bid/ask prices
-	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, false, false)
+	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, false, false, configPtr.Timeout)
 	if err != nil {
 		return false, models.ArbitragePath{}, nil
 	}
@@ -275,10 +278,11 @@ func continuousUpdate(
 	if arbitragePath.Cycle != nil {
 
 		expectedReturn := trade.CalculateExpectedReturn(arbitragePath.Cycle, pairsPtr)
+		simplePath := trade.GetSimplePath(arbitragePath.Cycle)
 
-		if !expectedReturn.Less(decimal.MustNew(1, 2)) {
+		if !expectedReturn.Less(decimal.MustNew(1, 2)) && len(simplePath) < 8 {
 
-			slog.Info("arbitrage opportunity found", "path", trade.GetSimplePath(arbitragePath.Cycle), "expectedReturn", expectedReturn, "lenPairs", len(*pairsPtr), "lenAssets", len(*assetsPtr))
+			slog.Info("arbitrage opportunity found", "path", simplePath, "expectedReturn", expectedReturn, "lenPairs", len(*pairsPtr), "lenAssets", len(*assetsPtr))
 
 			return true, arbitragePath, nil
 

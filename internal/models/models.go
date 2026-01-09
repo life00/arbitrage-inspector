@@ -17,6 +17,8 @@ const (
 )
 
 type Config struct {
+	Authenticate       bool
+	Timeout            time.Duration
 	Exchanges          []string
 	CurrencyInputMode  CurrencyInputMode
 	Currencies         []string

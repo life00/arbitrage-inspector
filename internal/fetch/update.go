@@ -1,6 +1,7 @@
 package fetch
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,6 +15,7 @@ import (
 )
 
 func updateExchange(
+	ctx context.Context,
 	clientPtr *ccxt.IExchange,
 	mu *sync.Mutex,
 	exchanges *models.Exchanges,
@@ -34,10 +36,17 @@ func updateExchange(
 	var wg sync.WaitGroup
 	var errs sync.Map
 
+	// helper function
 	runTask := func(task func() error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+
+			// check if context is already dead before starting
+			if ctx.Err() != nil {
+				return
+			}
+
 			if err := task(); err != nil {
 				errs.Store(time.Now().UnixNano(), err)
 			}
@@ -70,7 +79,20 @@ func updateExchange(
 		})
 	}
 
-	wg.Wait()
+	done := make(chan struct{})
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	// wait for either all tasks to finish OR the context to timeout
+	select {
+	case <-done:
+	case <-ctx.Done():
+		return fmt.Errorf("timeout reached: %w", ctx.Err())
+	}
+
 	close(pricesChan)
 	close(currenciesChan)
 	close(feesChan)
@@ -181,7 +203,7 @@ func fetchCurrencies(clientPtr *ccxt.IExchange, exchange *models.Exchange) (map[
 
 					fee, err := decimal.NewFromFloat64(*network.Fee)
 					if err != nil {
-						slog.Warn(fmt.Sprintf("invalid fee for currency %s on network %s: %v", id, name, err))
+						slog.Warn("invalid fee", "exchange", exchange.ID, "currency", id, "network", name, "error", err)
 						continue // Skip this network if fee is invalid
 					}
 					uppercaseName := strings.ToUpper(name)

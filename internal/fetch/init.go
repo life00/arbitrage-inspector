@@ -81,7 +81,7 @@ type clientResult struct {
 }
 
 // concurrently loads all exchanges with API credentials and fetches currency data into cache
-func loadClient(exchanges []string) (models.Clients, error) {
+func loadClient(exchanges []string, authenticate bool) (models.Clients, error) {
 	var wg sync.WaitGroup
 	resultsChan := make(chan clientResult, len(exchanges))
 
@@ -92,20 +92,23 @@ func loadClient(exchanges []string) (models.Clients, error) {
 			defer wg.Done()
 			result := clientResult{}
 
-			// handle credentials from .env
 			options := map[string]interface{}{}
-			apiKeyEnvName := strings.ToUpper(ex) + "_API_KEY"
-			secretEnvName := strings.ToUpper(ex) + "_SECRET"
-			passwordEnvName := strings.ToUpper(ex) + "_PASSWORD"
 
-			if apiKey := os.Getenv(apiKeyEnvName); apiKey != "" {
-				options["apiKey"] = apiKey
-			}
-			if secret := os.Getenv(secretEnvName); secret != "" {
-				options["secret"] = secret
-			}
-			if password := os.Getenv(passwordEnvName); password != "" {
-				options["password"] = password
+			if authenticate {
+				// handle credentials from .env
+				apiKeyEnvName := strings.ToUpper(ex) + "_API_KEY"
+				secretEnvName := strings.ToUpper(ex) + "_SECRET"
+				passwordEnvName := strings.ToUpper(ex) + "_PASSWORD"
+
+				if apiKey := os.Getenv(apiKeyEnvName); apiKey != "" {
+					options["apiKey"] = apiKey
+				}
+				if secret := os.Getenv(secretEnvName); secret != "" {
+					options["secret"] = secret
+				}
+				if password := os.Getenv(passwordEnvName); password != "" {
+					options["password"] = password
+				}
 			}
 
 			// instantiate the exchange object
@@ -125,9 +128,11 @@ func loadClient(exchanges []string) (models.Clients, error) {
 				return
 			}
 
-			// fetch balance to test credentials
-			if _, err := client.FetchBalance(); err != nil {
-				result.err = fmt.Errorf("failed to authenticate for %s: %w", ex, err)
+			if authenticate {
+				// fetch balance to test credentials
+				if _, err := client.FetchBalance(); err != nil {
+					result.err = fmt.Errorf("failed to authenticate for %s: %w", ex, err)
+				}
 			}
 
 			resultsChan <- result

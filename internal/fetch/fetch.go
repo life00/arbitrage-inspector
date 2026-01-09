@@ -2,11 +2,14 @@
 package fetch
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/ccxt/ccxt/go/v4"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
@@ -15,7 +18,7 @@ func validateInput(config models.Config) (models.Clients, error) {
 	if err != nil {
 		return nil, err
 	}
-	clients, err := loadClient(config.Exchanges)
+	clients, err := loadClient(config.Exchanges, config.Authenticate)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +83,7 @@ func UpdateExchanges(
 	clientsPtr *models.Clients,
 	updateCurrencyFees bool,
 	updateMarketFees bool,
+	timeout time.Duration,
 ) error {
 	slog.Debug("updating exchanges")
 	if clientsPtr == nil || len(*clientsPtr) == 0 {
@@ -98,12 +102,17 @@ func UpdateExchanges(
 
 	for _, client := range *clientsPtr {
 		wg.Add(1)
-		go func() {
+		go func(c ccxt.IExchange) {
 			defer wg.Done()
-			if err := updateExchange(&client, &mu, exchangesPtr, updateCurrencyFees, updateMarketFees); err != nil {
-				errChan <- fmt.Errorf("[Exchange: %s] %w", client.GetId(), err)
+
+			// context with timeout
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+			if err := updateExchange(ctx, &c, &mu, exchangesPtr, updateCurrencyFees, updateMarketFees); err != nil {
+				errChan <- fmt.Errorf("[Exchange: %s] %w", c.GetId(), err)
 			}
-		}()
+		}(client)
 	}
 
 	wg.Wait()
