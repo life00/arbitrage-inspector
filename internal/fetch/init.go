@@ -43,6 +43,7 @@ func validateExchanges(exchanges []string) error {
 		"fetchBalance",
 		"withdraw",
 		"fetchDepositAddress",
+		"watchOrderBookForSymbols",
 	}
 
 	for _, exchangeID := range ccxtpro.Exchanges {

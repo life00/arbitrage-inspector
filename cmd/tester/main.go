@@ -42,9 +42,13 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		Authenticate: false,
 		Timeout:      60 * time.Second,
 		Exchanges: []string{
-			"binance",
-			"kucoin",
+			"backpack",
 			"bitget",
+			// "bitmart",
+			"bitmex",
+			"coinex",
+			// "kucoin",
+			"toobit",
 		},
 		CurrencyInputMode: models.SpecifiedCurrencies,
 		Currencies: []string{
@@ -113,4 +117,14 @@ func main() {
 
 	w := watch.NewWatcher(ctx, &clients, &exchanges)
 	w.Start()
+
+	time.Sleep(20 * time.Second)
+	w.Status()
+	time.Sleep(10 * time.Second)
+
+	start := time.Now()
+	w.Sync()
+	fmt.Println(time.Since(start))
+
+	w.Stop()
 }
