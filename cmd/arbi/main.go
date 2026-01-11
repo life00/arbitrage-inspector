@@ -45,13 +45,7 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		Authenticate: false,
 		Timeout:      60 * time.Second,
 		Exchanges: []string{
-			// "binance",
-			// "kucoin",
-			// "bitget",
-			// "htx",
-			// "coinbase",
-
-			// "binance",
+			"binance",
 			"bitget",
 			"bitmart",
 			"bitmex",
@@ -228,9 +222,8 @@ func continuousUpdate(
 	pairsPtr *models.Pairs,
 	w *watch.Watcher,
 ) (bool, models.ArbitragePath, error) {
+	time.Sleep(10 * time.Second)
 	slog.Info("running continuous update")
-	// client: wait some time
-	time.Sleep(30 * time.Second)
 
 	// watch: call watcher to update data
 	w.Status()
@@ -261,8 +254,9 @@ func continuousUpdate(
 		expectedReturn := trade.CalculateExpectedReturn(arbitragePath.Cycle, pairsPtr)
 		simplePath := trade.GetSimplePath(arbitragePath.Cycle)
 
-		if !expectedReturn.Less(decimal.MustNew(1, 2)) && len(simplePath) < 8 {
-
+		// this limits the arbitrage opportunities to only high-value ones
+		// if !expectedReturn.Less(decimal.MustNew(1, 2)) && len(simplePath) < 8 {
+		if true {
 			slog.Info("arbitrage opportunity found", "path", simplePath, "expectedReturn", expectedReturn, "lenPairs", len(*pairsPtr), "lenAssets", len(*assetsPtr))
 
 			return true, arbitragePath, nil
@@ -296,6 +290,8 @@ func main() {
 	// create and start watcher
 	w := watch.NewWatcher(ctx, &clients, &exchanges, &nominalAssetBalances)
 	w.Start()
+	// client: wait some time to initialize all WebSockets
+	time.Sleep(1 * time.Minute)
 
 	for !arbitrageFound {
 		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &assets, &index, &interPairs, w)

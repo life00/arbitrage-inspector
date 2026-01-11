@@ -134,7 +134,7 @@ func (ew *ExchangeWatcher) Start(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 // OPTIMIZE: it might be possible to increase the speed of sync
-// by performing CalculateEffectivePrices() inside workers instead
+// by performing CalculateEffectivePrices() concurrently
 func (ew *ExchangeWatcher) Sync(globalExchanges *models.Exchanges) int {
 	targetEx, ok := (*globalExchanges)[ew.id]
 	if !ok {
@@ -283,6 +283,12 @@ type wsConfig struct {
 	obLimit   int // orderbook limit
 }
 
+// FIXME: some websockets are still getting broken because of rate limits.
+// e.g. Kucoin and Bitmart are erroring, Bitmex and Binance ignoring
+// It is necessary to further optimize these parameters and find how to
+// overcome rate limits. Additionally it's necessary to have sufficient
+// openbook limit, because transform.CalculateEffectivePrices is failing
+// due to insufficient data.
 func getWSConfig(id string) wsConfig {
 	switch id {
 	case "binance":
