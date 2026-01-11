@@ -1,3 +1,4 @@
+// Package transform provides functions to transform data into various structures.
 package transform
 
 import (
@@ -6,6 +7,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/ccxt/ccxt/go/v4/pro"
+	"github.com/govalues/decimal"
 	"github.com/life00/arbitrage-inspector/internal/models"
 )
 
@@ -169,4 +172,10 @@ func CreateIntraExchangePairs(config models.PairConfig, exchangesPtr *models.Exc
 	}
 
 	return finalPairs
+}
+
+// TODO:
+// CalculateEffectivePrices() calculates effective ask/bid prices based on orderbook and capital amount
+func CalculateEffectivePrices(orderbook ccxtpro.OrderBook) (ask, bid decimal.Decimal) {
+	return decimal.Zero, decimal.Zero
 }

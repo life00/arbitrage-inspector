@@ -44,10 +44,10 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		Exchanges: []string{
 			"backpack",
 			"bitget",
-			// "bitmart",
+			"bitmart",
 			"bitmex",
 			"coinex",
-			// "kucoin",
+			"kucoin",
 			"toobit",
 		},
 		CurrencyInputMode: models.SpecifiedCurrencies,
@@ -127,4 +127,5 @@ func main() {
 	fmt.Println(time.Since(start))
 
 	w.Stop()
+	time.Sleep(1 * time.Minute)
 }
