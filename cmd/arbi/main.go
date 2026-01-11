@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -14,6 +15,7 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 	"github.com/life00/arbitrage-inspector/internal/trade"
 	"github.com/life00/arbitrage-inspector/internal/transform"
+	"github.com/life00/arbitrage-inspector/internal/watch"
 	"github.com/lmittmann/tint"
 )
 
@@ -50,9 +52,12 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 			// "coinbase",
 
 			// "binance",
-			"bitfinex", "bitget", "bitmart", "bitmex", "bitstamp", "bitvavo", "bybit", "coinbase", "coincatch", "cryptocom", "gemini", "kraken", "lbank", "mexc", "okx", "phemex", "whitebit",
+			"bitget",
+			"bitmart",
+			"bitmex",
+			"kucoin",
 		},
-		CurrencyInputMode: models.AllCurrencies,
+		CurrencyInputMode: models.SpecifiedCurrencies,
 		Currencies: []string{
 			"BTC",
 			"ETH",
@@ -112,13 +117,13 @@ func periodicUpdate(
 	exchangesPtr *models.Exchanges,
 	clientsPtr *models.Clients,
 	assetsPtr *models.AssetIndexes,
-) (models.Pairs, error) {
+) (models.Pairs, models.AssetBalances, error) {
 	slog.Info("running periodic update")
 	// update exchange data structure
 	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, true, true, configPtr.Timeout)
 	if err != nil {
 		fmt.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	// saveAnyJson(exchanges, "/home/user/dev/src/arbitrage/exchanges.json")
 	// load data from cached exchanges.json
@@ -135,7 +140,7 @@ func periodicUpdate(
 	slog.Debug("creating inter-exchange pairs")
 	interPairs := createInterPairs(configPtr, exchangesPtr, assetsPtr, &nominalAssetBalances)
 
-	return interPairs, nil
+	return interPairs, nominalAssetBalances, nil
 }
 
 // finds source asset balances
@@ -218,35 +223,20 @@ func createInterPairs(configPtr *models.Config, exchangesPtr *models.Exchanges, 
 func continuousUpdate(
 	configPtr *models.Config,
 	exchangesPtr *models.Exchanges,
-	clientsPtr *models.Clients,
 	assetsPtr *models.AssetIndexes,
 	indexPtr *models.Index,
 	pairsPtr *models.Pairs,
+	w *watch.Watcher,
 ) (bool, models.ArbitragePath, error) {
 	slog.Info("running continuous update")
-	// TODO:
 	// client: wait some time
-	// watch: call watcher to update data
-	// transform: create actual effective inter-exchange pairs
-	// engine: search for reasonable arbitrage and find full ArbitragePath
-	// trade: arbitrage is profitable?
-
-	// TODO: watcher
-	// watch: initialize orderbook watcher (establish websocket connections)
-	// watch: cache all received orderbook data
-	// transform: calculate effective prices (from orderbook data)
-	// watch: update exchanges data structure
-
-	// FIXME: temporary solution
-
-	// wait some time before each update
 	time.Sleep(30 * time.Second)
 
-	// update exchange price data using regular bid/ask prices
-	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, false, false, configPtr.Timeout)
-	if err != nil {
-		return false, models.ArbitragePath{}, nil
-	}
+	// watch: call watcher to update data
+	w.Status()
+	w.Sync()
+
+	// transform: create actual effective inter-exchange pairs
 
 	// calculate regular intra-exchange pairs
 	pairConfig := models.PairConfig{
@@ -256,27 +246,16 @@ func continuousUpdate(
 	intraPairs := transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr)
 	maps.Copy(*pairsPtr, intraPairs)
 
-	// type SerializedPair struct {
-	// 	Key   models.PairKey
-	// 	Value models.Pair
-	// }
-	// var serializedPairs []SerializedPair
-	// for key, value := range pairs {
-	// 	serializedPairs = append(serializedPairs, SerializedPair{
-	// 		Key:   key,
-	// 		Value: value,
-	// 	})
-	// }
-	// saveAnyJson(serializedPairs, "/home/user/dev/src/arbitrage/pairs.json")
-
-	// find arbitrage cycle
+	// TODO:
+	// engine: search for reasonable arbitrage and find full ArbitragePath
 	arbitragePath := models.ArbitragePath{
 		ToCycle:   models.TransactionPath{},
 		Cycle:     engine.FindArbitrage(pairsPtr, assetsPtr, indexPtr, configPtr.SourceAssets),
 		FromCycle: models.TransactionPath{},
 	}
 
-	// check if arbitrage is reasonable
+	// TODO:
+	// trade: arbitrage is profitable?
 	if arbitragePath.Cycle != nil {
 
 		expectedReturn := trade.CalculateExpectedReturn(arbitragePath.Cycle, pairsPtr)
@@ -302,7 +281,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	interPairs, err := periodicUpdate(&config, &exchanges, &clients, &assets)
+	interPairs, nominalAssetBalances, err := periodicUpdate(&config, &exchanges, &clients, &assets)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -311,9 +290,15 @@ func main() {
 	var arbitragePath models.ArbitragePath
 	var arbitrageFound bool
 
-	slog.Info("starting continuous update")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// create and start watcher
+	w := watch.NewWatcher(ctx, &clients, &exchanges, &nominalAssetBalances)
+	w.Start()
+
 	for !arbitrageFound {
-		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &clients, &assets, &index, &interPairs)
+		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &assets, &index, &interPairs, w)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
