@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +25,7 @@ type Watcher struct {
 	exchangeWatchers map[string]*ExchangeWatcher
 }
 
-func NewWatcher(parentCtx context.Context, clients *models.Clients, exchanges *models.Exchanges) *Watcher {
+func NewWatcher(parentCtx context.Context, clients *models.Clients, exchanges *models.Exchanges, assetBalances *models.AssetBalances) *Watcher {
 	ctx, cancel := context.WithCancel(parentCtx)
 	w := &Watcher{
 		exchanges:        exchanges,
@@ -42,7 +43,7 @@ func NewWatcher(parentCtx context.Context, clients *models.Clients, exchanges *m
 		}
 
 		if len(symbols) > 0 {
-			w.exchangeWatchers[id] = newExchangeWatcher(id, client, symbols)
+			w.exchangeWatchers[id] = newExchangeWatcher(id, client, symbols, assetBalances)
 		}
 	}
 	return w
@@ -91,15 +92,16 @@ func (w *Watcher) Status() {
 // --- ExchangeWatcher ---
 
 type ExchangeWatcher struct {
-	id      string
-	client  ccxtpro.IExchange
-	workers []*Worker
-	config  wsConfig
+	id            string
+	client        ccxtpro.IExchange
+	workers       []*Worker
+	config        wsConfig
+	assetBalances *models.AssetBalances
 }
 
-func newExchangeWatcher(id string, client ccxtpro.IExchange, symbols []string) *ExchangeWatcher {
+func newExchangeWatcher(id string, client ccxtpro.IExchange, symbols []string, assetBalances *models.AssetBalances) *ExchangeWatcher {
 	cfg := getWSConfig(id)
-	ew := &ExchangeWatcher{id: id, client: client, config: cfg}
+	ew := &ExchangeWatcher{id: id, client: client, config: cfg, assetBalances: assetBalances}
 
 	for i := 0; i < len(symbols); i += cfg.chunkSize {
 		end := min(i+cfg.chunkSize, len(symbols))
@@ -131,6 +133,8 @@ func (ew *ExchangeWatcher) Start(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
+// OPTIMIZE: it might be possible to increase the speed of sync
+// by performing CalculateEffectivePrices() inside workers instead
 func (ew *ExchangeWatcher) Sync(globalExchanges *models.Exchanges) int {
 	targetEx, ok := (*globalExchanges)[ew.id]
 	if !ok {
@@ -138,19 +142,34 @@ func (ew *ExchangeWatcher) Sync(globalExchanges *models.Exchanges) int {
 	}
 
 	updated := 0
+	assetBalances := *ew.assetBalances
+
 	for _, wk := range ew.workers {
-		wk.mu.RLock()
+		wk.mu.Lock()
+
 		for sym, raw := range wk.cache {
 			if market, exists := targetEx.Markets[sym]; exists {
-				market.Ask, market.Bid = transform.CalculateEffectivePrices(raw)
+				base, _, _ := strings.Cut(sym, "/")
+
+				market.Ask, market.Bid = transform.CalculateEffectivePrices(
+					assetBalances[models.AssetKey{Exchange: ew.id, Currency: base}],
+					raw,
+				)
+
 				if raw.Timestamp != nil {
 					market.Timestamp = time.UnixMilli(*raw.Timestamp)
 				}
+
 				targetEx.Markets[sym] = market
 				updated++
 			}
 		}
-		wk.mu.RUnlock()
+
+		// delete the cache
+		wk.cache = make(map[string]ccxtpro.OrderBook)
+		wk.connected = false
+
+		wk.mu.Unlock()
 	}
 	return updated
 }
@@ -190,7 +209,7 @@ func (ew *ExchangeWatcher) Status(id string) {
 	slog.Info("exchange watcher status",
 		"id", id,
 		"workers", fmt.Sprintf("%d/%d", active, total),
-		"coverage", updated,
+		"coverage", fmt.Sprintf("%d/%d", updated, ew.TotalSymbols()),
 		"delay", avgDelay.Round(time.Millisecond),
 	)
 }
@@ -210,6 +229,7 @@ type Worker struct {
 
 func (w *Worker) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
+	// slog.Debug("started worker", "exchange", w.client.GetId(), "worker_id", w.id, "symbols", w.symbols)
 	for {
 		select {
 		case <-ctx.Done():
@@ -221,7 +241,9 @@ func (w *Worker) Run(ctx context.Context, wg *sync.WaitGroup) {
 				if ctx.Err() != nil {
 					return
 				}
-				w.setStatus(false)
+				w.mu.Lock()
+				w.connected = false
+				w.mu.Unlock()
 				slog.Warn("worker error", "ex", w.client.GetId(), "id", w.id, "err", err)
 				select {
 				case <-ctx.Done():
@@ -246,12 +268,6 @@ func (w *Worker) updateCache(ob ccxtpro.OrderBook) {
 	w.cache[*ob.Symbol] = ob
 }
 
-func (w *Worker) setStatus(connected bool) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.connected = connected
-}
-
 func (w *Worker) cleanup() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -270,14 +286,14 @@ type wsConfig struct {
 func getWSConfig(id string) wsConfig {
 	switch id {
 	case "binance":
-		return wsConfig{170, 30000, 3}
+		return wsConfig{170, 30000, 10}
 	case "kucoin":
-		return wsConfig{50, 5000, 5}
+		return wsConfig{50, 5000, 20}
 	case "bitmart":
-		return wsConfig{20, 5000, 5}
+		return wsConfig{20, 5000, 10}
 	case "bitmex":
 		return wsConfig{50, 5000, 10}
 	default:
-		return wsConfig{50, 2000, 5}
+		return wsConfig{50, 2000, 10}
 	}
 }
