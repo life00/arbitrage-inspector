@@ -1,4 +1,4 @@
 main
 .env
-exchanges.json
-pairs.json
+**/*.json
+**/*.png
