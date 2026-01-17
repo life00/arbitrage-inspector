@@ -1,4 +1,6 @@
-# Trade Execution
+# Trade Package
+
+The trade package is responsible for evaluating arbitrage feasibility and safely executing the trades. It is not implemented fully.
 
 ## Cross-exchange transfer of funds
 

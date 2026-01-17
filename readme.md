@@ -1,52 +1,54 @@
 # Arbitrage Inspector
 
-## 1. Data retrieval
+Arbitrage inspector is a trading/analysis bot which identifies triangular and multi-exchange arbitrage in cryptocurrency exchanges. It automatically accounts for network and exchange fees, as well as liquidity constants (aka slippage risk). It is using the CCXT library to interact with exchange API's.
 
-The program receives an array of exchanges and cryptocurrencies. Then it retrieves conversion price data and up to date fee information from various API's.
+## Objective
 
-## 2. Arbitrage identification
+The primary objective of this project is to identify and exploit real arbitrage opportunities within live financial environments. By combining market theory with sophisticated algorithmic analysis, the project pushes the boundaries of automated trading to implement a viable solution. The cryptocurrency ecosystem was selected for its transparency and accessibility compared to traditional finance, however the same algorithms can be implemented in traditional financial markets.
 
-The program receives all cryptocurrency conversion information and an input cryptocurrency with a given balance. Using a clever algorithm based on graph theory (e.g. Bellman-Ford algorithm) the program identifies possible arbitrage opportunities while accounting for conversion, withdrawal, and other fees. It returns the top 5 arbitrage opportunities if such exist.
+## Achievements
 
-### Alternative algorithms
+Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange and network fees.
 
-Alternatively, it is possible to use other algorithms. The naive approach would be to iterate through all possible combinations of conversions to identify the best conversion paths, however this is extremely inefficient. Other comprehensive option involves using linear programming (aka function optimization) methods to construct a function with given constrains and identify the objective. Additionally, other advanced machine learning algorithms can be utilized.
+## Usage
 
-The graph theory method presents the most classic and straightforward solution to the problem, furthermore, new research papers may be used to further improve the algorithm. Therefore, it is selected as the ideal arbitrage identification algorithm.
+Currently, the arbitrage inspector can only fetch data, identify real arbitrage opportunities, and provide the arbitrage cycle. To run it you should switch to tag `v0.6` (without WS watcher) or to tag `v0.7` (with WS watcher). Then simply run `go run ./cmd/arbi/*`.
 
-## 3. Trade execution
+Note that the `v0.6` version may not be showing all found arbitrages because it has a >0.1% return threshold. Additionally, note that the `v0.7` version doesn't fully work. To configure arbi modify the `./cmd/arbi/main.go` directly.
 
-The program receives the most profitable arbitrage path. Using the necessary API's it executes the trade as soon as possible to avoid any price slippage risk or other delay. It repeats the conversion cycle until the arbitrage opportunity is no longer present.
+## Control flow
 
-## 4. Application interface
+The project was implemented based on a conceptual control flow shown in the following diagram:
 
-The program may be accessible through CLI application, GUI application, website, messenger bot, or other medium. It provides a simple control interface and reports top 5 identified arbitrage opportunities and results from the trades.
+![Process control flow](./docs/process/process.png)
 
-## Technical note
-
-Whenever possible, all processes must be executed in parallel to maximize the speed of processing and reduce the price slippage risk.
+The control flow aims to minimize the required time from data retrieval to trade execution. I believe it scales well with the project structure and performance.
 
 ## Project structure
 
-```
+The project is following separation of concerns based on functionality. The following is the project layout:
+
+```c
 arbitrage-inspector
-├── cmd
-│   └── arbitrage-inspector
-│       └── main.go
+├── cmd // clients
+│   ├── arbi // main CLI client
+│   └── tester // small testing client
+├── docs // extra documentation
 ├── go.mod
-├── internal
-│   ├── arbitrage
-│   │   └── arbitrage.go
-│   ├── data
-│   │   └── data.go
-│   ├── exchange
-│   │   └── exchange.go
-│   ├── fees
-│   │   └── fees.go
-│   ├── models
-│   │   └── models.go
-│   └── trade
-│       └── trade.go
+├── go.sum
+├── internal // packages
+│   ├── engine // main algorithms
+│   ├── fetch // RESP API data retrieval
+│   ├── models // data structures
+│   ├── trade // trade execution
+│   ├── transform // data transformation
+│   └── watch // WS API data watching
+├── makefile
 ├── readme.md
-└── todo.md
+├── todo.md
+└── *.json // data cache
 ```
+
+## Documentation
+
+Further documentation can be found in the `./docs/` directory. It includes information about internal packages, process execution, and other technical details.

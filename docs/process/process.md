@@ -1,5 +1,9 @@
 # Process Flow List
 
+This file presents a conceptual process flow of Arbitrage Inspector.
+
+## Process
+
 - **initialization**
   - **client**: define initial config
   - **fetch**: initialize exchanges data structure
@@ -45,17 +49,17 @@
 - orderbook watcher
   - continuously watching for changes in orderbook for all markets in all exchanges
   - requires specialized websocket spawning process for each exchange to avoid API rate limits
-  - ccxtpro.WatchOrderBooks()
+  - `watchOrderBooks()`
 - orderbook fetcher
   - concurrently fetching orderbook for markets within arbitrage path
   - checks if the arbitrage is still possible, accounting for liquidity
-  - multiple ccxtpro.FetchOrderBook() concurrently
+  - multiple `fetchOrderBook()` concurrently
 - price data
   - bid/ask prices
-  - ccxtpro.FetchTickers()
+  - `fetchTickers()`
 - currency data
   - network fees
-  - ccxtpro.FetchCurrencies()
+  - `fetchCurrencies()`
 - market data
   - exchange fees
-  - ccxtpro.FetchMarkets()
+  - `fetchMarkets()`
