@@ -3,6 +3,7 @@ package watch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -58,7 +59,17 @@ func (w *Watcher) Start() {
 
 func (w *Watcher) Stop() {
 	slog.Info("stopping watcher service...")
+
 	w.cancel()
+
+	// forcefully close connections
+	for id, ew := range w.exchangeWatchers {
+		slog.Debug("closing exchange connection", "exchange", id)
+		if errs := ew.client.Close(); len(errs) > 0 {
+			// Just log warnings, we are shutting down anyway
+			slog.Warn("errors closing exchange", "exchange", id, "errors", errors.Join(errs...))
+		}
+	}
 
 	done := make(chan struct{})
 	go func() {
@@ -229,31 +240,38 @@ type Worker struct {
 
 func (w *Worker) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	// slog.Debug("started worker", "exchange", w.client.GetId(), "worker_id", w.id, "symbols", w.symbols)
+	slog.Debug("started worker", "exchange", w.client.GetId(), "worker_id", w.id)
 	for {
-		select {
-		case <-ctx.Done():
-			w.cleanup()
+		// check context
+		if ctx.Err() != nil {
+			w.mu.Lock()
+			w.connected = false
+			w.mu.Unlock()
 			return
-		default:
-			ob, err := w.client.WatchOrderBookForSymbols(w.symbols, ccxtpro.WithWatchOrderBookForSymbolsLimit(int64(w.limit)))
-			if err != nil {
-				if ctx.Err() != nil {
-					return
-				}
+		}
+
+		ob, err := w.client.WatchOrderBookForSymbols(w.symbols, ccxtpro.WithWatchOrderBookForSymbolsLimit(int64(w.limit)))
+		if err != nil {
+			if ctx.Err() != nil {
 				w.mu.Lock()
 				w.connected = false
 				w.mu.Unlock()
-				slog.Warn("worker error", "ex", w.client.GetId(), "id", w.id, "err", err)
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(5 * time.Second):
-					continue
-				}
+				return
 			}
-			w.updateCache(ob)
+
+			w.mu.Lock()
+			w.connected = false
+			w.mu.Unlock()
+			slog.Warn("worker error", "ex", w.client.GetId(), "id", w.id, "err", err)
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(5 * time.Second):
+				continue
+			}
 		}
+		w.updateCache(ob)
 	}
 }
 
@@ -266,13 +284,6 @@ func (w *Worker) updateCache(ob ccxtpro.OrderBook) {
 	w.connected = true
 	w.lastUpdate = time.Now()
 	w.cache[*ob.Symbol] = ob
-}
-
-func (w *Worker) cleanup() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	_, _ = w.client.UnWatchOrderBookForSymbols(w.symbols)
-	w.connected = false
 }
 
 // --- Utils ---
