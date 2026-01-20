@@ -2,6 +2,7 @@
 package transform
 
 import (
+	"fmt"
 	"log/slog"
 	"maps"
 	"runtime"
@@ -175,7 +176,7 @@ func CreateIntraExchangePairs(config models.PairConfig, exchangesPtr *models.Exc
 }
 
 // CalculateEffectivePrices returns VWAP for asks and bids based on a target volume of Base currency.
-func CalculateEffectivePrices(assetBalance models.AssetBalance, orderbook ccxtpro.OrderBook) (ask, bid decimal.Decimal) {
+func CalculateEffectivePrices(assetBalance models.AssetBalance, orderbook ccxtpro.OrderBook) (bid, ask decimal.Decimal) {
 	balance := assetBalance.Balance
 	if balance.IsZero() {
 		return getTopOfOrderBook(orderbook)
@@ -195,7 +196,7 @@ func CalculateEffectivePrices(assetBalance models.AssetBalance, orderbook ccxtpr
 		}
 	}
 
-	return ask, bid
+	return bid, ask
 }
 
 func calculateOrderBookSide(targetVol decimal.Decimal, levels [][]float64, side string) decimal.Decimal {
@@ -251,4 +252,48 @@ func getTopOfOrderBook(ob ccxtpro.OrderBook) (ask, bid decimal.Decimal) {
 		bid, _ = decimal.NewFromFloat64(ob.Bids[0][0])
 	}
 	return
+}
+
+// GetTransactionMarkets() retrieves all relevant markets from the ArbitragePath transactions
+func GetTransactionMarkets(arbitragePath models.ArbitragePath, exchangesPtr *models.Exchanges) models.Exchanges {
+	// extract all intra-transactions
+	var intraTransactions models.TransactionPath
+	for _, pair := range arbitragePath.Cycle {
+		if pair.From.Exchange == pair.To.Exchange {
+			intraTransactions = append(intraTransactions, pair)
+		}
+	}
+
+	exchanges := *exchangesPtr
+	localExchanges := make(models.Exchanges)
+
+	for _, pair := range intraTransactions {
+		exchange := pair.From.Exchange
+		// get the market symbol
+		var base string
+		var quote string
+
+		if _, ok := exchanges[exchange].Markets[fmt.Sprintf("%s/%s", pair.From.Currency, pair.To.Currency)]; ok {
+			base = pair.From.Currency
+			quote = pair.To.Currency
+		} else {
+			base = pair.To.Currency
+			quote = pair.From.Currency
+		}
+
+		symbol := fmt.Sprintf("%s/%s", base, quote)
+
+		// saving to the local exchanges
+		localExchanges[exchange] = models.Exchange{
+			ID: exchange,
+			Currencies: map[string]models.Currency{
+				pair.From.Currency: exchanges[exchange].Currencies[pair.From.Currency],
+				pair.To.Currency:   exchanges[exchange].Currencies[pair.To.Currency],
+			},
+			Markets: map[string]models.Market{
+				symbol: exchanges[exchange].Markets[symbol],
+			},
+		}
+	}
+	return localExchanges
 }

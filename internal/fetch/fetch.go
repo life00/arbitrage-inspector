@@ -3,6 +3,7 @@ package fetch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -127,5 +128,48 @@ func UpdateExchanges(
 		return fmt.Errorf("exchange data update failed with %d error(s):\n- %s", len(errors), strings.Join(errors, "\n- "))
 	}
 
+	return nil
+}
+
+// UpdateOrderBooks() updates orderbook data for specified markets in exchangesPtr
+func UpdateOrderBooks(exchangesPtr *models.Exchanges, clientsPtr *models.Clients) error {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errs []error
+
+	for exID, client := range *clientsPtr {
+		ex, exists := (*exchangesPtr)[exID]
+		if !exists {
+			continue
+		}
+
+		for marketID := range ex.Markets {
+			wg.Add(1)
+
+			marketRef := ex.Markets[marketID]
+
+			go func(c *ccxtpro.IExchange, eID, mID string, mkt models.Market) {
+				defer wg.Done()
+
+				ob, err := (*c).FetchOrderBook(mID)
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				if err != nil {
+					errs = append(errs, fmt.Errorf("[%s-%s]: %w", eID, mID, err))
+					return
+				}
+
+				mkt.OrderBook = ob
+				(*exchangesPtr)[eID].Markets[mID] = mkt
+			}(&client, exID, marketID, marketRef)
+		}
+	}
+
+	wg.Wait()
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
 	return nil
 }

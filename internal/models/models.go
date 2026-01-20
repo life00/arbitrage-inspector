@@ -55,6 +55,7 @@ type Market struct {
 	Bid       decimal.Decimal
 	TakerFee  decimal.Decimal
 	Timestamp time.Time
+	OrderBook ccxtpro.OrderBook
 }
 
 type AssetIndex struct {
@@ -117,6 +118,8 @@ type TransactionPath []PairKey
 // ToCycle describes the cheapest/shortest path from the optimal asset in SourceAssets to the optimal cycle asset
 // Cycle describes the arbitrage cycle loop of assets
 // FromCycle describes the cheapest/shortest path from the optimal cycle asset to the optimal asset in SourceAssets
+// FIXME: ToCycle and FromCycle still are not used properly in the code
+// it is necessary to integrate them properly once engine.FindArbitrage() properly implements it
 type ArbitragePath struct {
 	ToCycle   TransactionPath
 	Cycle     TransactionPath

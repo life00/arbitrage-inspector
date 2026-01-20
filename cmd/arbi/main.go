@@ -45,7 +45,6 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		Authenticate: false,
 		Timeout:      60 * time.Second,
 		Exchanges: []string{
-			"binance",
 			"bitget",
 			"bitmart",
 			"bitmex",
@@ -268,6 +267,58 @@ func continuousUpdate(
 	return false, models.ArbitragePath{}, nil
 }
 
+// verifyArbitrage() fetches orderbook of intra-exchange pairs, computes VWAP effective bid/ask prices
+// and checks if the arbitrage is still profitable
+func verifyArbitrage(
+	arbitragePath models.ArbitragePath,
+	clientsPtr *models.Clients,
+	nominalAssetBalancesPtr *models.AssetBalances,
+	exchangesPtr *models.Exchanges,
+	interPairsPtr *models.Pairs,
+	assetsPtr *models.AssetIndexes,
+) bool {
+	// fetch: fetch orderbook data of markets in ArbitragePath
+	localExchanges := transform.GetTransactionMarkets(arbitragePath, exchangesPtr)
+	assetBalances := *nominalAssetBalancesPtr
+
+	err := fetch.UpdateOrderBooks(&localExchanges, clientsPtr)
+	if err != nil {
+		slog.Warn("error fetching orderbooks", "error", err)
+		return false
+	}
+
+	// transform: calculate effective prices
+	for eID, exchange := range localExchanges {
+		for mID, market := range exchange.Markets {
+			market.Bid, market.Ask = transform.CalculateEffectivePrices(
+				assetBalances[models.AssetKey{Exchange: exchange.ID, Currency: market.Base}],
+				market.OrderBook,
+			)
+			localExchanges[eID].Markets[mID] = market
+		}
+	}
+
+	// tranform: recreate inter-pairs
+	pairConfig := models.PairConfig{
+		IntraType: models.FeeTypeEffective,
+	}
+	pairs := make(models.Pairs)
+	maps.Copy(pairs, *interPairsPtr)
+
+	maps.Copy(pairs,
+		transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr),
+	)
+
+	// trade: check if arbitrage is still profitable
+	expectedReturn := trade.CalculateExpectedReturn(arbitragePath.Cycle, &pairs)
+
+	if expectedReturn.IsNeg() {
+		return false
+	} else {
+		return true
+	}
+}
+
 func main() {
 	config, exchanges, clients, assets, index, err := initialization()
 	if err != nil {
@@ -299,6 +350,13 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+	}
+
+	// verify arbitrage liquidity of the found arbitrage
+	if verifyArbitrage(arbitragePath, &clients, &nominalAssetBalances, &exchanges, &interPairs, &assets) {
+		slog.Info("arbitrage has sufficient liquidity")
+	} else {
+		slog.Warn("arbitrage has insufficient liquidity")
 	}
 
 	// TODO: trade step

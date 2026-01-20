@@ -162,10 +162,11 @@ func (ew *ExchangeWatcher) Sync(globalExchanges *models.Exchanges) int {
 			if market, exists := targetEx.Markets[sym]; exists {
 				base, _, _ := strings.Cut(sym, "/")
 
-				market.Ask, market.Bid = transform.CalculateEffectivePrices(
+				market.Bid, market.Ask = transform.CalculateEffectivePrices(
 					assetBalances[models.AssetKey{Exchange: ew.id, Currency: base}],
 					raw,
 				)
+				market.OrderBook = raw
 
 				if raw.Timestamp != nil {
 					market.Timestamp = time.UnixMilli(*raw.Timestamp)
