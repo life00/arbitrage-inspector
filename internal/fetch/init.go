@@ -240,17 +240,24 @@ func createMarkets(clientPtr *ccxtpro.IExchange, currencies map[string]models.Cu
 	markets := make(map[string]models.Market)
 	marketsList := client.GetMarketsList()
 
+	var invalidMarkets int
+	var marketCount int
+
 	for _, m := range marketsList {
 		var baseID string
 		var quoteID string
 		if m.BaseId != nil && m.QuoteId != nil {
 			baseID = strings.ToUpper(*m.BaseId)
 			quoteID = strings.ToUpper(*m.QuoteId)
+		} else {
+			invalidMarkets++
+			continue
 		}
 
 		// check if both base and quote currencies are in the currency data structure
 		if _, baseExists := currencies[baseID]; baseExists {
 			if _, quoteExists := currencies[quoteID]; quoteExists {
+				marketCount++
 				// check market conditions
 				if m.Active != nil && *m.Active &&
 					m.Spot != nil && *m.Spot &&
@@ -261,9 +268,14 @@ func createMarkets(clientPtr *ccxtpro.IExchange, currencies map[string]models.Cu
 						Base:  baseID,
 						Quote: quoteID,
 					}
+				} else {
+					invalidMarkets++
 				}
 			}
 		}
+	}
+	if invalidMarkets != 0 {
+		slog.Warn("invalid markets", "exchange", client.GetId(), "count", fmt.Sprintf("%d/%d", invalidMarkets, marketCount))
 	}
 	return markets
 }
@@ -273,14 +285,20 @@ func createCurrencies(clientPtr *ccxtpro.IExchange, currencyInputMode models.Cur
 	client := *clientPtr
 
 	currenciesMap := make(map[string]models.Currency)
+	var missingCurrencies int
+	var invalidCurrencies int
+
+	apiCurrencies := client.GetCurrenciesList()
 
 	switch currencyInputMode {
 	case models.SpecifiedCurrencies:
 
 		apiCurrenciesMap := make(map[string]ccxtpro.Currency)
-		for _, c := range client.GetCurrenciesList() {
+		for _, c := range apiCurrencies {
 			if c.Code != nil {
 				apiCurrenciesMap[*c.Code] = c
+			} else {
+				invalidCurrencies++
 			}
 		}
 
@@ -291,7 +309,11 @@ func createCurrencies(clientPtr *ccxtpro.IExchange, currencyInputMode models.Cur
 					c.Deposit != nil && *c.Deposit &&
 					c.Withdraw != nil && *c.Withdraw {
 					currenciesMap[currencyID] = models.Currency{ID: currencyID}
+				} else {
+					invalidCurrencies++
 				}
+			} else {
+				missingCurrencies++
 			}
 		}
 
@@ -301,13 +323,15 @@ func createCurrencies(clientPtr *ccxtpro.IExchange, currencyInputMode models.Cur
 
 	default: // models.AllCurrencies
 
-		for _, c := range client.GetCurrenciesList() {
+		for _, c := range apiCurrencies {
 			// check all currency conditions
 			if c.Code != nil &&
 				c.Active != nil && *c.Active &&
 				c.Deposit != nil && *c.Deposit &&
 				c.Withdraw != nil && *c.Withdraw {
 				currenciesMap[*c.Code] = models.Currency{ID: *c.Code}
+			} else {
+				invalidCurrencies++
 			}
 		}
 
@@ -316,6 +340,14 @@ func createCurrencies(clientPtr *ccxtpro.IExchange, currencyInputMode models.Cur
 	// delete all currencies which should be excluded
 	for currencyID := range excludedCurrencySet {
 		delete(currenciesMap, currencyID)
+	}
+
+	if missingCurrencies != 0 {
+		slog.Warn("missing currencies", "exchange", client.GetId(), "count", fmt.Sprintf("%d/%d", missingCurrencies, len(currencySet)))
+	}
+
+	if invalidCurrencies != 0 {
+		slog.Warn("invalid currencies", "exchange", client.GetId(), "count", fmt.Sprintf("%d/%d", invalidCurrencies, len(apiCurrencies)))
 	}
 
 	return currenciesMap
