@@ -165,6 +165,8 @@ func (ew *ExchangeWatcher) Sync(globalExchanges *models.Exchanges) int {
 				market.Bid, market.Ask = transform.CalculateEffectivePrices(
 					assetBalances[models.AssetKey{Exchange: ew.id, Currency: base}],
 					raw,
+					ew.id,
+					market.ID,
 				)
 				market.OrderBook = raw
 

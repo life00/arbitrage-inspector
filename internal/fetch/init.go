@@ -43,6 +43,7 @@ func validateExchanges(exchanges []string) error {
 		"fetchBalance",
 		"withdraw",
 		"fetchDepositAddress",
+		"fetchOrderBook",
 		"watchOrderBookForSymbols",
 	}
 

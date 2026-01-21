@@ -151,7 +151,7 @@ func UpdateOrderBooks(exchangesPtr *models.Exchanges, clientsPtr *models.Clients
 			go func(c *ccxtpro.IExchange, eID, mID string, mkt models.Market) {
 				defer wg.Done()
 
-				ob, err := (*c).FetchOrderBook(mID)
+				ob, err := (*c).FetchOrderBook(mID, ccxtpro.WithFetchOrderBookLimit(100))
 
 				mu.Lock()
 				defer mu.Unlock()

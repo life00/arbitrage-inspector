@@ -176,14 +176,14 @@ func CreateIntraExchangePairs(config models.PairConfig, exchangesPtr *models.Exc
 }
 
 // CalculateEffectivePrices returns VWAP for asks and bids based on a target volume of Base currency.
-func CalculateEffectivePrices(assetBalance models.AssetBalance, orderbook ccxtpro.OrderBook) (bid, ask decimal.Decimal) {
+func CalculateEffectivePrices(assetBalance models.AssetBalance, orderbook ccxtpro.OrderBook, eID string, mID string) (bid, ask decimal.Decimal) {
 	balance := assetBalance.Balance
 	if balance.IsZero() {
 		return getTopOfOrderBook(orderbook)
 	}
 
-	ask = calculateOrderBookSide(balance, orderbook.Asks, "ask")
-	bid = calculateOrderBookSide(balance, orderbook.Bids, "bid")
+	ask = calculateOrderBookSide(balance, orderbook.Asks, "ask", eID, mID)
+	bid = calculateOrderBookSide(balance, orderbook.Bids, "bid", eID, mID)
 
 	// Fallback if calculated values are zero
 	if ask.IsZero() || bid.IsZero() {
@@ -199,7 +199,7 @@ func CalculateEffectivePrices(assetBalance models.AssetBalance, orderbook ccxtpr
 	return bid, ask
 }
 
-func calculateOrderBookSide(targetVol decimal.Decimal, levels [][]float64, side string) decimal.Decimal {
+func calculateOrderBookSide(targetVol decimal.Decimal, levels [][]float64, side string, eID string, mID string) decimal.Decimal {
 	if len(levels) == 0 {
 		return decimal.Zero
 	}
@@ -229,6 +229,8 @@ func calculateOrderBookSide(targetVol decimal.Decimal, levels [][]float64, side 
 	// Warning if orderbook depth is less than target volume
 	if accumulatedVol.Cmp(targetVol) < 0 {
 		slog.Warn("insufficient liquidity",
+			"exchange", eID,
+			"market", mID,
 			"side", side,
 			"wanted", targetVol.String(),
 			"found", accumulatedVol.String(),
