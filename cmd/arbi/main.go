@@ -45,10 +45,7 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		Authenticate: false,
 		Timeout:      60 * time.Second,
 		Exchanges: []string{
-			"bitget",
-			"bitmart",
-			"bitmex",
-			"kucoin",
+			"bitget", "bitmart", "bitmex", "kucoin",
 		},
 		CurrencyInputMode: models.SpecifiedCurrencies,
 		Currencies: []string{
@@ -67,13 +64,16 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 			// problematic currency codes
 			"NEIRO",
 			"BROCCOLI",
+			"ZKP",
+			"LOT",
+			"EUR",
 		},
 		ReferenceAsset: models.AssetBalance{
 			Asset: models.AssetKey{
 				Exchange: "bitget",
 				Currency: "USDC",
 			},
-			Balance: decimal.MustNew(10000, 0),
+			Balance: decimal.MustNew(100, 0),
 		},
 		// all the assets where there is capital denominated in ReferenceAsset amount
 		SourceAssets: map[models.AssetKey]models.AssetBalance{
@@ -118,7 +118,7 @@ func periodicUpdate(
 		fmt.Println(err)
 		return nil, nil, err
 	}
-	// saveAnyJson(exchanges, "/home/user/dev/src/arbitrage/exchanges.json")
+	// saveAnyJSON(*exchangesPtr, "/home/user/dev/src/arbitrage/exchanges.json")
 	// load data from cached exchanges.json
 	// exchanges, err := loadAnyJson[models.Exchanges]("/home/user/dev/src/arbitrage/exchanges.json")
 	// if err != nil {
@@ -277,28 +277,31 @@ func verifyArbitrage(
 	interPairsPtr *models.Pairs,
 	assetsPtr *models.AssetIndexes,
 ) bool {
-	// fetch: fetch orderbook data of markets in ArbitragePath
+	// transform: get transaction markets from ArbitragePath
 	localExchanges := transform.GetTransactionMarkets(arbitragePath, exchangesPtr)
 	assetBalances := *nominalAssetBalancesPtr
 
+	// fetch: fetch orderbook data of markets in ArbitragePath
 	err := fetch.UpdateOrderBooks(&localExchanges, clientsPtr)
 	if err != nil {
 		slog.Warn("error fetching orderbooks", "error", err)
 		return false
 	}
 
-	// transform: calculate effective prices
+	// transform: calculate volume-weighted average prices
 	for eID, exchange := range localExchanges {
 		for mID, market := range exchange.Markets {
 			market.Bid, market.Ask = transform.CalculateEffectivePrices(
 				assetBalances[models.AssetKey{Exchange: exchange.ID, Currency: market.Base}],
 				market.OrderBook,
+				eID,
+				mID,
 			)
 			localExchanges[eID].Markets[mID] = market
 		}
 	}
 
-	// tranform: recreate inter-pairs
+	// tranform: recreate pairs
 	pairConfig := models.PairConfig{
 		IntraType: models.FeeTypeEffective,
 	}
@@ -306,15 +309,17 @@ func verifyArbitrage(
 	maps.Copy(pairs, *interPairsPtr)
 
 	maps.Copy(pairs,
-		transform.CreateIntraExchangePairs(pairConfig, exchangesPtr, assetsPtr),
+		transform.CreateIntraExchangePairs(pairConfig, &localExchanges, assetsPtr),
 	)
 
 	// trade: check if arbitrage is still profitable
 	expectedReturn := trade.CalculateExpectedReturn(arbitragePath.Cycle, &pairs)
 
 	if expectedReturn.IsNeg() {
+		slog.Warn("arbitrage has insufficient liquidity", "expectedReturn", expectedReturn)
 		return false
 	} else {
+		slog.Info("arbitrage has sufficient liquidity", "expectedReturn", expectedReturn)
 		return true
 	}
 }
@@ -354,11 +359,7 @@ func main() {
 
 	// verify arbitrage liquidity of the found arbitrage
 	if verifyArbitrage(arbitragePath, &clients, &nominalAssetBalances, &exchanges, &interPairs, &assets) {
-		slog.Info("arbitrage has sufficient liquidity")
-	} else {
-		slog.Warn("arbitrage has insufficient liquidity")
+		// TODO: implement trade execution
+		slog.Info("executing trade")
 	}
-
-	// TODO: trade step
-	fmt.Println(arbitragePath.Cycle)
 }
