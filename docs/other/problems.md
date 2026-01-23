@@ -32,13 +32,13 @@ CCXT library does provide a suitable method to request orderbook data for all ma
 
 Fortunately, there is another method which is supported by more exchanges and can somewhat provide data of 1000+ markets per exchange at once, and it is watchOrderBookForSymbols. It allows to create WebSocket connections and watch the orderbook of many markets at once.
 
-Unfortunately, it wasn't perfect. WebSocket connections are much more complicated to manage than simple REST API requests. In addition to that, each exchange has it's own API limits which restrict the number of markets per WS connection, number of created WS connections per minute, number of concurrent WS connections, etc. This made it incredibly difficult to maximize data retrieval, while staying within rate limits.
+Unfortunately, it isn't perfect. WebSocket connections are much more complicated to manage than simple REST API requests. In addition to that, each exchange has it's own API limits which restrict the number of markets per WS connection, number of created WS connections per minute, number of concurrent WS connections, etc. This made it incredibly difficult to maximize data retrieval, while staying within rate limits.
 
 Despite this, I designed an architecture which perfectly integrates such a watcher into the system (see control flow chart), and I fully implemented the watch package to support concurrent watcher, which spawns exchange watchers, which spawn individual WebSocket connections. Each exchange watcher has it's own WS connection spawning configuration to stay within rate limits of the exchange.
 
 However this workaround system has it's own limitations. Some exchanges start returning errors with too many concurrent connections (e.g. kucoin), while others start throttling or completely stopping the connection (e.g. binance). Even if it works, the provided detail of orderbook (total volume) may be insufficient to calculate actual VWAP. The current implementation cannot watch all markets on all specified exchanges. This might potentially be improved by fine tuning the configuration for each exchange, but this is not a guaranteed solution. Another issue is the efficiency. Large amount of traffic and no way of configuring it results in very high CPU usage due to JSON parsing. This may only be limited with per-exchange API configuration.
 
-An optional liquidity check can also be performed on the identified arbitrage path. Instead of relying on WebSocket connections, it uses fetchOrderBook to concurrently fetch orderbooks of multiple markets and verify if the arbitrage is actually possible.
+As mentioned above there is also a function fetchOrderBook which fetches market orderbooks individually. It is not ideal to fetch all orderbooks at once, however it still can be used to verify whether the detected arbitrage actually has enough liquidity. Therefore, it was implemented as a temporary solution to account for liquidity before executing the trade. The implementation concurrently executes fetchOrderBook function for all markets within the identified ArbitragePath and checks whether the expected return is still positive after computing VWAP. Such an approach does add additional latency of about 1-2 seconds, however there is no better solution.
 
 ### Others
 
@@ -72,9 +72,11 @@ The current implementation is limited in terms of performance and API rate limit
 
 It is quite a difficult task, however I had an idea of using some basic concepts of probability theory. Instead of defining complex selection rules which may or may not work, it is possible to monitor the market and record the currencies which tend to appear more often in the arbitrage cycle. This would require monitoring a very large set of markets for a long time to get a reliable list of currencies. Afterwards, this list of currencies can be used for actual arbitrage execution. Perhaps, there are some other methods, but this seems to be the most straightforward.
 
+Additionally, it might possible to limit the number of watched markets by using a hybrid version of watcher. The regular fetcher method would be called once in a while, while watcher will only monitor markets with low liquidity. The CCXT ticker data structure provides information on bid/ask price volume, so watcher may only monitor markets where the bid/ask volume is below the capital amount.
+
 ### Trade execution
 
-Trade execution has not been implemented yet in the project. It is a crucial part of running arbitrage, but without seeing any analytical results it does not make sense to implement it yet.
+Trade execution has not been implemented yet in the project. It will be implemented based on stages of ArbitragePath execution (ToCycle, Cycle, FromCycle). In each stage it will perform individual transactions From and To currency. In case an error occurs, it will move the capital to the closest safe asset.
 
 ### Automation and UI
 

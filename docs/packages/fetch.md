@@ -1,6 +1,6 @@
 # Fetch Package
 
-The fetch package is responsible for retrieving the price and fee data from various exchanges.
+The fetch package is responsible for retrieving the price, fee, and orderbook data from various exchanges.
 
 ## Exchange and currency selection
 
@@ -25,6 +25,12 @@ There are two main kinds of fees involved:
      - market-taker, which are usually higher
      - market-maker, which are usually lower
 
+## Orderbook data
+
+Contains the orderbook with individual prices and corresponding volume amounts for bid and ask sides of the market. It is used to calculate the volume-weighted average price (VWAP) based on invested capital to properly account for liquidity.
+
+Orderbook data is used to verify that the ArbitragePath has sufficient liquidity to perform a profitable arbitrage.
+
 ## CCXT library
 
 1. `fetchCurrencies()`
@@ -33,3 +39,5 @@ There are two main kinds of fees involved:
    - fetch info about all markets for an exchange
 3. `fetchTickers()`
    - fetch most up to date bid and ask prices for a symbol
+4. `fetchOrderBook()`
+   - fetch most up to date orderbook of a specified market

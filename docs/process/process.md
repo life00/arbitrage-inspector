@@ -38,9 +38,11 @@ This file presents a conceptual process flow of Arbitrage Inspector.
       - based on capital requirements (using nominal balances of all assets)
     - **watch**: update `exchange` data structure
 - **trade**
-  - _verifier (WIP)_
-    - **fetch**: fetch orderbook data of markets in ArbitragePath
-    - **transform**: calculate effective prices
+  - _verifier_
+    - **transform**: get transaction markets from ArbitragePath
+    - **fetch**: fetch orderbook data of\nmarkets in ArbitragePath
+    - **transform**: calculate volume-weighted average prices
+    - **transform**: recreate pairs
     - **trade**: check if arbitrage is still profitable
   - **trade**: todo
 

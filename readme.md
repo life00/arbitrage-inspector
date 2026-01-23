@@ -8,7 +8,7 @@ The primary objective of this project is to identify and exploit real arbitrage 
 
 ## Achievements
 
-Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange and network fees.
+Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange fees, network fees, and liquidity. The fetch version is able to find real arbitrage opportunities with capital below $1000. The watch version is able to continuously monitor markets, however it is limited in scale.
 
 ## Usage
 

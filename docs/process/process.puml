@@ -58,12 +58,14 @@ repeat while (wait(1 hour) && no arbitrage) is (true) not (false)
 
 |Trade|
 
-partition Verifier (WIP) {
+partition Verifier {
+  :**transform**\nget transaction markets\n from ArbitragePath;
   :**fetch**\nfetch orderbook data of\nmarkets in ArbitragePath;
-  :**transform**\ncalculate effective prices;
+  :**transform**\ncalculate volume-weighted\n average prices;
+  :**transform**\nrecreate inter-pairs;
   :**trade**\ncheck if arbitrage\nis still profitable;
 }
-:**trade**\nTODO;
+:**Trade**\nTODO;
 
 repeat while (resynchronize) is (true)
 
