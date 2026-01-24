@@ -44,7 +44,6 @@ func validateExchanges(exchanges []string) error {
 		"withdraw",
 		"fetchDepositAddress",
 		"fetchOrderBook",
-		"watchOrderBookForSymbols",
 	}
 
 	for _, exchangeID := range ccxtpro.Exchanges {
@@ -259,9 +258,11 @@ func createMarkets(clientPtr *ccxtpro.IExchange, currencies map[string]models.Cu
 			if _, quoteExists := currencies[quoteID]; quoteExists {
 				marketCount++
 				// check market conditions
-				if m.Active != nil && *m.Active &&
-					m.Spot != nil && *m.Spot &&
-					m.Symbol != nil {
+				if m.Symbol != nil &&
+					// WARN: these are temporary permissive conditions
+					// in order to monitor more exchanges
+					((m.Active == nil) || (m.Active != nil && *m.Active)) &&
+					((m.Spot == nil) || (m.Spot != nil && *m.Spot)) {
 					id := strings.ToUpper(*m.Symbol)
 					markets[id] = models.Market{
 						ID:    id,
@@ -326,9 +327,11 @@ func createCurrencies(clientPtr *ccxtpro.IExchange, currencyInputMode models.Cur
 		for _, c := range apiCurrencies {
 			// check all currency conditions
 			if c.Code != nil &&
-				c.Active != nil && *c.Active &&
-				c.Deposit != nil && *c.Deposit &&
-				c.Withdraw != nil && *c.Withdraw {
+				// WARN: these are temporary permissive conditions
+				// in order to monitor more exchanges
+				((c.Active == nil) || (c.Active != nil && *c.Active)) &&
+				((c.Deposit == nil) || (c.Deposit != nil && *c.Deposit)) &&
+				((c.Withdraw == nil) || (c.Withdraw != nil && *c.Withdraw)) {
 				currenciesMap[*c.Code] = models.Currency{ID: *c.Code}
 			} else {
 				invalidCurrencies++

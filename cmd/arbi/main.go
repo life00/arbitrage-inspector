@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -15,7 +14,6 @@ import (
 	"github.com/life00/arbitrage-inspector/internal/models"
 	"github.com/life00/arbitrage-inspector/internal/trade"
 	"github.com/life00/arbitrage-inspector/internal/transform"
-	"github.com/life00/arbitrage-inspector/internal/watch"
 	"github.com/lmittmann/tint"
 )
 
@@ -45,9 +43,11 @@ func initialization() (models.Config, models.Exchanges, models.Clients, models.A
 		Authenticate: false,
 		Timeout:      60 * time.Second,
 		Exchanges: []string{
-			"bitget", "bitmart", "bitmex", "kucoin",
+			"binance", "bybit", "coincatch", "mexc", "myokx", "okx", "okxus",
+			"bitfinex",
+			"bitget", "bitmart", "bitmex", "bitvavo", "kucoin",
 		},
-		CurrencyInputMode: models.SpecifiedCurrencies,
+		CurrencyInputMode: models.AllCurrencies,
 		Currencies: []string{
 			"BTC",
 			"ETH",
@@ -219,14 +219,16 @@ func continuousUpdate(
 	assetsPtr *models.AssetIndexes,
 	indexPtr *models.Index,
 	pairsPtr *models.Pairs,
-	w *watch.Watcher,
+	clientsPtr *models.Clients,
 ) (bool, models.ArbitragePath, error) {
 	time.Sleep(10 * time.Second)
 	slog.Info("running continuous update")
 
-	// watch: call watcher to update data
-	w.Status()
-	w.Sync()
+	// fetch: update exchange price data using regular bid/ask prices
+	err := fetch.UpdateExchanges(exchangesPtr, clientsPtr, false, false, configPtr.Timeout)
+	if err != nil {
+		return false, models.ArbitragePath{}, nil
+	}
 
 	// transform: create actual effective inter-exchange pairs
 
@@ -340,17 +342,8 @@ func main() {
 	var arbitragePath models.ArbitragePath
 	var arbitrageFound bool
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// create and start watcher
-	w := watch.NewWatcher(ctx, &clients, &exchanges, &nominalAssetBalances)
-	w.Start()
-	// client: wait some time to initialize all WebSockets
-	time.Sleep(1 * time.Minute)
-
 	for !arbitrageFound {
-		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &assets, &index, &interPairs, w)
+		arbitrageFound, arbitragePath, err = continuousUpdate(&config, &exchanges, &assets, &index, &interPairs, &clients)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
