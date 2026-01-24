@@ -8,13 +8,25 @@ The primary objective of this project is to identify and exploit real arbitrage 
 
 ## Achievements
 
-Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange fees, network fees, and liquidity. The fetch version is able to find real arbitrage opportunities with capital below $1000. The watch version is able to continuously monitor markets, however it is limited in scale.
+Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange fees, network fees, and liquidity. The fetch version is able to find real arbitrage opportunities with capital below $500, especially during periods of volatility. The watch version is able to continuously monitor markets, however it is limited in scale.
+
+## Limitations
+
+The main limitation is accessibility of data, specifically orderbook data. CCXT does provide functions to retrieve orderbook data, however due to various reasons they are not suitable to fetch orderbook for thousands of different markets. The current workaround is to use `fetchOrderBook()` method and verify liquidity only after the arbitrage is identified. There are other limitations, but this is the main one. See `./docs/other/problems.md` for more details.
 
 ## Usage
 
-Currently, the arbitrage inspector can only fetch data, identify real arbitrage opportunities, and provide the arbitrage cycle. To run it you should switch to tag `v0.6` (without WS watcher) or to tag `v0.7` (with WS watcher). Then simply run `go run ./cmd/arbi/*`.
+The current implementation only analyzes the market and does not execute any transactions. There are two different versions: fetcher and watcher. Fetcher periodically gets ticket data, while watcher continuously gets orderbook data.
 
-Note that the `v0.6` version may not be showing all found arbitrages because it has a >0.1% return threshold. Additionally, note that the `v0.7` version doesn't fully work. To configure arbi modify the `./cmd/arbi/main.go` directly.
+Watcher implementation is limited by the number of markets it can watch simultaneously due to API restrictions, therefore it is not able to find arbitrage. Fetcher is able to find arbitrage, however the effectiveness and speed of the detection algorithm is limited (see `./docs/other/problems.md` for details).
+
+The fetcher version is in the `master` branch, while the watcher version is in the `feature/watcher` branch. To run Arbitrage Inspector, simply checkout to the corresponding branch and run the following command:
+
+```sh
+go run ./cmd/arbi/*
+```
+
+Additionally, you may configure the application inside of `./cmd/arbi/main.go` in the `initialization()` function.
 
 ## Control flow
 

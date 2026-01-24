@@ -60,7 +60,7 @@ While the current implementation of the algorithm can find arbitrage cycles, it 
 
 Due to technical reasons, Bellman-Ford algorithm doesn't detect the _best_ arbitrage cycle, but rather it detects the first cycle it finds. Therefore, it is not the best in terms of return, and it is also not the shortest one possible. Sometimes it detects cycles with over six transactions. Longer cycles may involve higher risk and longer transaction time.
 
-To avoid that, it might be possible to somehow modify the Bellman-Ford algorithm to skip negative weight cycles with over six transactions. Alternatively, it might be possible to do post-processing on the identified arbitrage cycle, and attempt to find any shortcuts.
+To avoid that, it might be possible to somehow modify the Bellman-Ford algorithm to find shorter negative weight cycles. Alternatively, it might be possible to do post-processing on the identified arbitrage cycle, and attempt to find any shortcuts.
 
 ## Future Extensions
 
@@ -74,9 +74,23 @@ It is quite a difficult task, however I had an idea of using some basic concepts
 
 Additionally, it might possible to limit the number of watched markets by using a hybrid version of watcher. The regular fetcher method would be called once in a while, while watcher will only monitor markets with low liquidity. The CCXT ticker data structure provides information on bid/ask price volume, so watcher may only monitor markets where the bid/ask volume is below the capital amount.
 
+Even if it is not possible to get up to date liquidity information of all markets, it might be possible to estimate this liquidity, and thereby reduce the number of markets which have to be continuously watched.
+
+### Overcoming API rate limits
+
+As mentioned above, one of the main issues is the liquidity or slippage risk. It cannot be effectively managed largely due to API limitations. The current watcher implementation attempts account for liquidity, however it is still failing due to per-IP API limits.
+
+It might be possible to overcome these API rate limits by using multiple IP addresses to establish concurrent WebSocket connections to those exchanges. Additionally, using authentication tokens might increase the rate limits, but this would require creating accounts on those exchanges.
+
+### Optimizing capital size
+
+After testing it appears that for each real identified arbitrage there is an optimal capital size. This comes from the fact that if capital is too large then it will be eaten by liquidity limitations and if capital is too small then it will be eaten by network fees. Therefore, it may be possible to estimate what is an optimal capital size before executing the trade
+
+This process can be executed after a real arbitrage is identified and before the trade is executed. It can be performed by essentially simulating arbitrage transactions with varying amounts of capital based on known orderbook and fee data to find capital which maximizes profit.
+
 ### Trade execution
 
-Trade execution has not been implemented yet in the project. It will be implemented based on stages of ArbitragePath execution (ToCycle, Cycle, FromCycle). In each stage it will perform individual transactions From and To currency. In case an error occurs, it will move the capital to the closest safe asset.
+Trade execution has not been implemented yet in the project. It will be implemented based on stages of ArbitragePath execution (ToCycle, Cycle, FromCycle). In each stage it will perform individual transactions From and To currency. In case an error occurs, it will move the capital to the closest safe asset. It must also keep a detailed record all transaction for tax purposes.
 
 ### Automation and UI
 

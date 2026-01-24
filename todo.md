@@ -1,13 +1,11 @@
-- [ ] **evaluate the performance, is it fast enough for real-time trading to minimize price slippage risk?**
+- [ ] **evaluate the performance, is it fast enough for real-time trading?**
 - [ ] implement unit tests
 - client
   - ...
-- data
+- fetch
   - [ ] unified network names
     - `exchange.options['networks']{'UNIFIED_KEY': 'ID'}`
     - e.g. `kucoin.options['networks']{'LIGHTNING': 'btcln'}`
-  - [ ] **ensure that markets have enough liquidity**
-    - will be implemented by calculating effective exchange rate based on orderbook liquidity
   - [ ] implement random currency selection option
     - figure out the criteria for optimal currency selection
   - [ ] maximize arbitrage return
@@ -17,6 +15,9 @@
 - arbitrage
   - [ ] **refactor FindArbitrage() to handle arbitrage cycles which do not have any of the source assets inside of them**
     - if none of the source assets are in the arbitrage cycle, it must determine the cheapest path from the source assets (multi-source node) to the cheapest arbitrage cycle starting node, and back to the source assets (multi-source node). Then it evaluates whether it is still profitable, if yes then it returns the overall path, otherwise no arbitrage is found.
+- watch
+  - [ ] **improve reliability of the watcher implementation**
+    - make it reliable enough to cover watching the entire network simultaneously
 - trade
   - [ ] implement safe fallback if transaction fails for whatever reason
   - ...
