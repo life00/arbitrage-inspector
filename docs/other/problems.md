@@ -95,3 +95,7 @@ Trade execution has not been implemented yet in the project. It will be implemen
 ### Automation and UI
 
 Similarly to trade execution, client automation and UI are aspects of the program which will be implemented in the future if there are good analytical results.
+
+### Greater market coverage
+
+Currently the arbitrage bot is limited only to exchanges supported by CCXT, however there is greater potential available in other centralized and especially decentralized exchanges. They could potentially double or triple the size of the network, thus increasing the chances of finding even more profitable arbitrages.
