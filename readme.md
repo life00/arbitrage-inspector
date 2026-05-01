@@ -1,6 +1,6 @@
 # Arbitrage Inspector
 
-Arbitrage inspector is a trading/analysis bot which identifies triangular and multi-exchange arbitrage in cryptocurrency exchanges. It automatically accounts for network and exchange fees, as well as liquidity constants (aka slippage risk). It is using the CCXT library to interact with exchange API's.
+Arbitrage inspector is a trading/analysis bot which identifies triangular and multi-exchange arbitrage in cryptocurrency exchanges. It automatically accounts for network and exchange fees, as well as liquidity constraints (aka slippage risk). It is using the CCXT library to interact with exchange API's.
 
 ## Objective
 
@@ -32,7 +32,11 @@ Additionally, you may configure the application inside of `./cmd/arbi/main.go` i
 
 The project was implemented based on a conceptual control flow shown in the following diagram:
 
-![Process control flow](./docs/process/process.png)
+<details><summary>
+  Process control flow
+</summary>
+  ![Process control flow](./docs/process/process.png)
+</details>
 
 The control flow aims to minimize the required time from data retrieval to trade execution. I believe it scales well with the project structure and performance.
 
@@ -58,7 +62,7 @@ arbitrage-inspector
 ├── makefile
 ├── readme.md
 ├── todo.md
-└── *.json // data cache
+└── *.json // data cache for testing
 ```
 
 ## Documentation
