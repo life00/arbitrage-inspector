@@ -32,12 +32,11 @@ Additionally, you may configure the application inside of `./cmd/arbi/main.go` i
 
 The project was implemented based on a conceptual control flow shown in the following diagram:
 
-<details><summary>
-  Process control flow
-</summary>
-  ![Process control flow](./docs/process/process.png)
+<details>
+  <summary>Process control flow</summary>
+  <img src="./docs/process/process.png" alt="Process control flow">
 </details>
-
+  
 The control flow aims to minimize the required time from data retrieval to trade execution. I believe it scales well with the project structure and performance.
 
 ## Project structure
