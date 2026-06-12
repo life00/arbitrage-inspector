@@ -4,9 +4,9 @@
   <img src="https://github.com/life00/life00.github.io/blob/main/posts/arbitrage-inspector/network.png?raw=true" width="70%" alt="A large currency network of cryptocurrencies and markets across ten crypto exchanges">
   
   <p><strong>A large currency network of cryptocurrencies and markets across ten crypto exchanges</strong></p>
-  
-  <small>Nodes (currencies) are colored based on type (stablecoin, major, meme, altcoin). Edges (markets) inside an exchange take that exchange's color. Gray edges connect the same currency across different exchanges.</small>
 </div>
+
+<sub>Nodes (currencies) are colored based on type (stablecoin, major, meme, altcoin). Edges (markets) inside an exchange take that exchange's color. Gray edges connect the same currency across different exchanges.</sub>
 
 ---
 
