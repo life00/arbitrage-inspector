@@ -1,18 +1,43 @@
 # Arbitrage Inspector
 
-Arbitrage inspector is a trading/analysis bot which identifies triangular and multi-exchange arbitrage in cryptocurrency exchanges. It automatically accounts for network and exchange fees, as well as liquidity constraints (aka slippage risk). It is using the CCXT library to interact with exchange API's.
+<div align="center">
+  <img src="https://github.com/life00/life00.github.io/blob/main/posts/arbitrage-inspector/network.png?raw=true" width="70%" alt="A large currency network of cryptocurrencies and markets across ten crypto exchanges">
+  
+  <p><strong>A large currency network of cryptocurrencies and markets across ten crypto exchanges</strong></p>
+  
+  <small>Nodes (currencies) are colored based on type (stablecoin, major, meme, altcoin). Edges (markets) inside an exchange take that exchange's color. Gray edges connect the same currency across different exchanges.</small>
+</div>
 
-## Objective
+---
 
-The primary objective of this project is to identify and exploit real arbitrage opportunities within live financial environments. By combining market theory with sophisticated algorithmic analysis, the project pushes the boundaries of automated trading to implement a viable solution. The cryptocurrency ecosystem was selected for its transparency and accessibility compared to traditional finance, however the same algorithms can be implemented in traditional financial markets.
+Arbitrage inspector is a trading/analysis bot which identifies triangular and multi-exchange arbitrage in cryptocurrency exchanges. It automatically accounts for network and exchange fees, as well as liquidity constraints (aka slippage risk). It is using the [CCXT library](https://docs.ccxt.com/) to interact with exchange API's.
 
-## Achievements
+Read my article about it on my website: <https://life00.github.io/posts/arbitrage-inspector/>
 
-Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange fees, network fees, and liquidity. The fetch version is able to find real arbitrage opportunities with capital below $500, especially during periods of volatility. The watch version is able to continuously monitor markets, however it is limited in scale.
+## Project structure
 
-## Limitations
+The project is following separation of concerns based on functionality. The following is the project layout:
 
-The main limitation is accessibility of data, specifically orderbook data. CCXT does provide functions to retrieve orderbook data, however due to various reasons they are not suitable to fetch orderbook for thousands of different markets. The current workaround is to use `fetchOrderBook()` method and verify liquidity only after the arbitrage is identified. There are other limitations, but this is the main one. See `./docs/other/problems.md` for more details.
+```c
+arbitrage-inspector
+├── cmd // clients
+│   ├── arbi // main CLI client
+│   └── tester // small testing client
+├── docs // extra documentation
+├── go.mod
+├── go.sum
+├── internal // packages
+│   ├── engine // main algorithms
+│   ├── fetch // RESP API data retrieval
+│   ├── models // data structures
+│   ├── trade // trade execution
+│   ├── transform // data transformation
+│   └── watch // WS API data watching
+├── makefile
+├── readme.md
+├── todo.md
+└── *.json // data cache for testing
+```
 
 ## Usage
 
@@ -39,30 +64,17 @@ The project was implemented based on a conceptual control flow shown in the foll
   
 The control flow aims to minimize the required time from data retrieval to trade execution. I believe it scales well with the project structure and performance.
 
-## Project structure
+## Objective
 
-The project is following separation of concerns based on functionality. The following is the project layout:
+The primary objective of this project is to identify and exploit real arbitrage opportunities within live financial environments. By combining market theory with sophisticated algorithmic analysis, the project pushes the boundaries of automated trading to implement a viable solution. The cryptocurrency ecosystem was selected for its transparency and accessibility compared to traditional finance, however the same algorithms can be implemented in traditional financial markets.
 
-```c
-arbitrage-inspector
-├── cmd // clients
-│   ├── arbi // main CLI client
-│   └── tester // small testing client
-├── docs // extra documentation
-├── go.mod
-├── go.sum
-├── internal // packages
-│   ├── engine // main algorithms
-│   ├── fetch // RESP API data retrieval
-│   ├── models // data structures
-│   ├── trade // trade execution
-│   ├── transform // data transformation
-│   └── watch // WS API data watching
-├── makefile
-├── readme.md
-├── todo.md
-└── *.json // data cache for testing
-```
+## Achievements
+
+Arbitrage inspector is able to fetch the most up-to-date price and fee information and find triangular arbitrage opportunities across multiple exchanges while accounting for all exchange fees, network fees, and liquidity. The fetch version is able to find real arbitrage opportunities with capital below $500, especially during periods of volatility. The watch version is able to continuously monitor markets, however it is limited in scale.
+
+## Limitations
+
+The main limitation is accessibility of data, specifically orderbook data. CCXT does provide functions to retrieve orderbook data, however due to various reasons they are not suitable to fetch orderbook for thousands of different markets. The current workaround is to use `fetchOrderBook()` method and verify liquidity only after the arbitrage is identified. There are other limitations, but this is the main one. See `./docs/other/problems.md` for more details.
 
 ## Documentation
 
