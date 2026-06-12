@@ -1,9 +1,8 @@
 # Arbitrage Inspector
 
 <div align="center">
-  <a href="https://github.com/life00/life00.github.io/blob/main/posts/arbitrage-inspector/network.png?raw=true">
-    <img src="https://github.com/life00/life00.github.io/blob/main/posts/arbitrage-inspector/network.png?raw=true" width="80%" alt="A large currency network" style="max-width: 100%; border-radius: 10px; object-fit: cover;">
-  </a>
+  <img src="https://github.com/life00/life00.github.io/blob/main/posts/arbitrage-inspector/network.png?raw=true" width="80%" alt="A large currency network of cryptocurrencies and markets across ten crypto exchanges">
+  
   <p><strong>A large currency network of cryptocurrencies and markets across ten crypto exchanges</strong></p>
 </div>
 
